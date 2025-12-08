@@ -198,7 +198,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎫 IT Maintenance Ticket Dashboard</h1>
+            <h1>IT Maintenance Ticket Dashboard</h1>
             <p>Real-time ticket monitoring and submission</p>
         </div>
 
@@ -285,6 +285,12 @@
                     })
                 });
 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showMessage('Error: ' + (errorData.error || 'Server error'), 'error');
+                    return;
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
@@ -299,7 +305,8 @@
                     showMessage('Error: ' + result.error, 'error');
                 }
             } catch (error) {
-                showMessage('Failed to connect to API', 'error');
+                console.error('API Error:', error);
+                showMessage('Failed to connect to API: ' + error.message, 'error');
             }
         });
 
@@ -336,14 +343,14 @@
                             ${ticket.priority_description}
                         </div>
                         <div class="ticket-meta">
-                            <span>🖥️ System: ${details.system}</span>
-                            <span>👤 Requester: ${details.requester}</span>
-                            <span>⏱️ SLA: ${sla}</span>
-                            <span>🕐 ${new Date(details.timestamp).toLocaleString()}</span>
+                            <span>System: ${details.system}</span>
+                            <span>Requester: ${details.requester}</span>
+                            <span>SLA: ${sla}</span>
+                            <span>${new Date(details.timestamp).toLocaleString()}</span>
                         </div>
-                        ${ticket.analysis.matched_keywords.length > 0 ? 
+                        ${ticket.analysis.matched_patterns.length > 0 ? 
                             `<div class="ticket-meta">
-                                <span>🔑 Keywords: ${ticket.analysis.matched_keywords.join(', ')}</span>
+                                <span>Patterns: ${ticket.analysis.matched_patterns.join(', ')}</span>
                             </div>` : ''}
                     </div>
                 `;
