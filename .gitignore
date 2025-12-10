@@ -28,3 +28,4 @@ api_server.log
 
 # Project specific
 nohup.out
+maintenance/tickets_storage.json
