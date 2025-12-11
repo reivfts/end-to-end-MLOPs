@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA Calculator - Campus Services</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .classes-list {
+            margin-bottom: 20px;
+        }
+
+        .class-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 60px;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            align-items: center;
+        }
+
+        .class-row input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .class-row input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .remove-btn {
+            padding: 10px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .remove-btn:hover {
+            background: #ff3838;
+        }
+
+        .add-class-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .add-class-btn:hover {
+            background: #5568d3;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .calculate-btn:hover {
+            opacity: 0.9;
+        }
+
+        .calculate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .gpa-value {
+            font-size: 64px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .result-details {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .result-detail {
+            text-align: center;
+        }
+
+        .result-detail-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .result-detail-label {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #1976D2;
+            margin-bottom: 8px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="/dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <div class="page-title">📊 GPA Calculator</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>Calculate Your GPA</h2>
+            
+            <div class="info-box">
+                <h4>How it works:</h4>
+                <ul>
+                    <li>GPA Range: 0.0 - 4.0</li>
+                    <li>Weight Range: 1 (elective) to 3 (core course)</li>
+                    <li>Formula: Weighted GPA = Σ(GPA × Weight) / Σ(Weight)</li>
+                </ul>
+            </div>
+
+            <div class="message" id="message"></div>
+            
+            <div class="classes-list" id="classList">
+                <!-- Classes will be added here -->
+            </div>
+
+            <button class="add-class-btn" onclick="addClass()">
+                + Add Class
+            </button>
+
+            <button class="calculate-btn" id="calculateBtn" onclick="calculateGPA()">
+                Calculate GPA
+            </button>
+        </div>
+
+        <div class="section" id="resultSection" style="display: none;">
+            <div class="result-card">
+                <h3>Your Weighted GPA</h3>
+                <div class="gpa-value" id="gpaValue">-</div>
+                <div class="result-details">
+                    <div class="result-detail">
+                        <div class="result-detail-value" id="totalClasses">-</div>
+                        <div class="result-detail-label">Total Classes</div>
+                    </div>
+                    <div class="result-detail">
+                        <div class="result-detail-value" id="totalWeight">-</div>
+                        <div class="result-detail-label">Total Weight</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        let classCount = 0;
+
+        function addClass() {
+            classCount++;
+            
+            const classList = document.getElementById('classList');
+            const classRow = document.createElement('div');
+            classRow.className = 'class-row';
+            classRow.id = `class-${classCount}`;
+            
+            classRow.innerHTML = `
+                <input type="text" placeholder="Class name (e.g., Calculus I)" id="name-${classCount}">
+                <input type="number" step="0.01" min="0" max="4" placeholder="GPA (0-4)" id="gpa-${classCount}">
+                <input type="number" min="1" max="3" placeholder="Weight (1-3)" id="weight-${classCount}">
+                <button class="remove-btn" onclick="removeClass(${classCount})">×</button>
+            `;
+            
+            classList.appendChild(classRow);
+        }
+
+        function removeClass(id) {
+            const classRow = document.getElementById(`class-${id}`);
+            if (classRow) {
+                classRow.remove();
+            }
+        }
+
+        async function calculateGPA() {
+            const classes = [];
+            const classRows = document.querySelectorAll('.class-row');
+            
+            if (classRows.length === 0) {
+                showMessage('Please add at least one class');
+                return;
+            }
+            
+            let hasError = false;
+            
+            classRows.forEach(row => {
+                const id = row.id.split('-')[1];
+                const name = document.getElementById(`name-${id}`).value;
+                const gpa = parseFloat(document.getElementById(`gpa-${id}`).value);
+                const weight = parseInt(document.getElementById(`weight-${id}`).value);
+                
+                if (!name || isNaN(gpa) || isNaN(weight)) {
+                    hasError = true;
+                    return;
+                }
+                
+                if (gpa < 0 || gpa > 4) {
+                    showMessage('GPA must be between 0.0 and 4.0');
+                    hasError = true;
+                    return;
+                }
+                
+                if (weight < 1 || weight > 3) {
+                    showMessage('Weight must be between 1 and 3');
+                    hasError = true;
+                    return;
+                }
+                
+                classes.push({ name, gpa, weight });
+            });
+            
+            if (hasError) {
+                return;
+            }
+            
+            const calculateBtn = document.getElementById('calculateBtn');
+            calculateBtn.disabled = true;
+            calculateBtn.textContent = 'Calculating...';
+            
+            try {
+                const response = await fetch('/api/gpa/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ classes })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    showMessage(data.error || 'Calculation failed');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.');
+            } finally {
+                calculateBtn.disabled = false;
+                calculateBtn.textContent = 'Calculate GPA';
+            }
+        }
+
+        function displayResult(data) {
+            document.getElementById('gpaValue').textContent = data.gpa.toFixed(2);
+            document.getElementById('totalClasses').textContent = data.total_classes;
+            document.getElementById('totalWeight').textContent = data.total_weight;
+            document.getElementById('resultSection').style.display = 'block';
+            
+            // Scroll to result
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showMessage(text) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = 'message error';
+            
+            setTimeout(() => {
+                message.className = 'message';
+            }, 5000);
+        }
+
+        // Add initial class
+        addClass();
+    </script>
+</body>
+</html>

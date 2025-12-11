@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Tickets - Campus Services</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ticket-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .ticket-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .ticket-meta {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .priority-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .priority-high {
+            background: #fee;
+            color: #c33;
+        }
+
+        .priority-medium {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .priority-low {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status-open {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-in_progress {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-resolved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .ticket-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .ticket-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .update-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+        }
+
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 968px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="/dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <div class="page-title">🔧 Maintenance Tickets</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Submit Ticket Section -->
+            <div class="section">
+                <h2>Submit New Ticket</h2>
+                <div class="message" id="submitMessage"></div>
+
+                <form id="ticketForm">
+                    <div class="form-group">
+                        <label for="ticketTitle">Title</label>
+                        <input type="text" id="ticketTitle" required placeholder="Brief description of the issue">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ticketCategory">Category</label>
+                        <select id="ticketCategory" required>
+                            <option value="">-- Select category --</option>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="hvac">HVAC</option>
+                            <option value="structural">Structural</option>
+                            <option value="cleaning">Cleaning</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ticketLocation">Location</label>
+                        <input type="text" id="ticketLocation" required placeholder="Building and room number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ticketDescription">Description</label>
+                        <textarea id="ticketDescription" required placeholder="Detailed description of the issue"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Submit Ticket
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tickets List Section -->
+            <div class="section">
+                <h2 id="ticketsTitle">My Tickets</h2>
+                
+                <div class="filter-section" id="filterSection">
+                    <button class="filter-btn active" onclick="filterTickets('all')">All</button>
+                    <button class="filter-btn" onclick="filterTickets('open')">Open</button>
+                    <button class="filter-btn" onclick="filterTickets('in_progress')">In Progress</button>
+                    <button class="filter-btn" onclick="filterTickets('resolved')">Resolved</button>
+                </div>
+
+                <div id="ticketsList">
+                    <div class="empty-state">Loading tickets...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+        
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        const isFaculty = user.role === 'faculty';
+        let allTickets = [];
+        let currentFilter = 'all';
+
+        // Update UI based on role
+        if (isFaculty) {
+            document.getElementById('ticketsTitle').textContent = 'All Tickets';
+        }
+
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('ticketTitle').value;
+            const category = document.getElementById('ticketCategory').value;
+            const location = document.getElementById('ticketLocation').value;
+            const description = document.getElementById('ticketDescription').value;
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch('/api/maintenance/tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        category,
+                        location,
+                        description
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('submitMessage', 'Ticket submitted successfully!', 'success');
+                    document.getElementById('ticketForm').reset();
+                    loadTickets();
+                } else {
+                    showMessage('submitMessage', data.error || 'Failed to submit ticket', 'error');
+                }
+            } catch (error) {
+                showMessage('submitMessage', 'Network error. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Ticket';
+            }
+        });
+
+        async function loadTickets() {
+            try {
+                const response = await fetch('/api/maintenance/tickets', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                allTickets = data.tickets || [];
+
+                renderTickets();
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+                document.getElementById('ticketsList').innerHTML = 
+                    '<div class="empty-state">Error loading tickets</div>';
+            }
+        }
+
+        function filterTickets(status) {
+            currentFilter = status;
+            
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            renderTickets();
+        }
+
+        function renderTickets() {
+            const ticketsList = document.getElementById('ticketsList');
+
+            let filteredTickets = allTickets;
+            if (currentFilter !== 'all') {
+                filteredTickets = allTickets.filter(t => t.status === currentFilter);
+            }
+
+            if (filteredTickets.length === 0) {
+                ticketsList.innerHTML = '<div class="empty-state">No tickets found</div>';
+                return;
+            }
+
+            ticketsList.innerHTML = '';
+
+            filteredTickets.forEach(ticket => {
+                const ticketDiv = document.createElement('div');
+                ticketDiv.className = 'ticket-item';
+
+                const priorityClass = `priority-${ticket.priority || 'medium'}`;
+                const statusClass = `status-${ticket.status}`;
+                const statusText = ticket.status.replace('_', ' ').toUpperCase();
+
+                ticketDiv.innerHTML = `
+                    <div class="ticket-header">
+                        <div>
+                            <div class="ticket-title">${ticket.title}</div>
+                            <div class="ticket-meta">
+                                ${isFaculty ? `Submitted by: ${ticket.user_email || 'Unknown'} | ` : ''}
+                                ${ticket.location} | ${ticket.category}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="priority-badge ${priorityClass}">${ticket.priority || 'MEDIUM'}</span>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                    <div class="ticket-description">${ticket.description}</div>
+                    <div class="ticket-meta">
+                        Created: ${new Date(ticket.created_at).toLocaleString()}
+                    </div>
+                    ${isFaculty ? `
+                        <div class="ticket-actions">
+                            <button class="action-btn update-btn" onclick="updateTicketStatus(${ticket.id})">
+                                Update Status
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteTicket(${ticket.id})">
+                                Delete
+                            </button>
+                        </div>
+                    ` : ''}
+                `;
+
+                ticketsList.appendChild(ticketDiv);
+            });
+        }
+
+        async function updateTicketStatus(ticketId) {
+            const newStatus = prompt('Enter new status (open, in_progress, resolved):');
+            
+            if (!newStatus || !['open', 'in_progress', 'resolved'].includes(newStatus)) {
+                alert('Invalid status');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/maintenance/tickets/${ticketId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    loadTickets();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update ticket');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        async function deleteTicket(ticketId) {
+            if (!confirm('Are you sure you want to delete this ticket?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/maintenance/tickets/${ticketId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadTickets();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to delete ticket');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        function showMessage(elementId, text, type) {
+            const message = document.getElementById(elementId);
+            message.textContent = text;
+            message.className = `message ${type}`;
+
+            setTimeout(() => {
+                message.className = 'message';
+            }, 5000);
+        }
+
+        // Initialize
+        loadTickets();
+    </script>
+</body>
+</html>

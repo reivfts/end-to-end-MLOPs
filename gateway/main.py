@@ -8,7 +8,7 @@ Role-Based Access:
 - Faculty/Student: Booking, GPA, Maintenance, Notifications
 """
 
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request, Response, send_from_directory
 from flask_cors import CORS
 import jwt
 import sqlite3
@@ -18,7 +18,7 @@ import uuid
 import os
 import requests
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
 # JWT Configuration
@@ -307,20 +307,8 @@ def delete_user(user_id):
 # Service Info
 @app.route('/', methods=['GET'])
 def home():
-    return jsonify({
-        'service': 'API Gateway Hub',
-        'version': '2.0.0',
-        'features': ['JWT Authentication', 'RBAC', 'Service Routing'],
-        'architecture': {
-            'admin_access': ['User Management (RBAC)'],
-            'faculty_student_access': ['Booking', 'GPA Calculator', 'Maintenance', 'Notifications']
-        },
-        'endpoints': {
-            'auth': '/auth/login, /auth/register, /auth/me',
-            'admin_only': '/api/users/*',
-            'faculty_student': '/api/booking/*, /api/gpa/*, /api/maintenance/*, /api/notifications/*'
-        }
-    }), 200
+    """Redirect to login page"""
+    return send_from_directory('static', 'login.html')
 
 # Proxy helper function
 def proxy_request(service_url, path, method='GET', data=None):
@@ -477,6 +465,45 @@ def maintenance_info():
         'frontend': 'http://localhost:8080/websocket_frontend.html'
     }), 200
 
+# ============================================================
+# Frontend Routes - Serve HTML Pages
+# ============================================================
+
+@app.route('/login.html')
+def login_page():
+    """Serve login page"""
+    return send_from_directory('static', 'login.html')
+
+@app.route('/dashboard.html')
+def dashboard_page():
+    """Serve dashboard page"""
+    return send_from_directory('static', 'dashboard.html')
+
+@app.route('/booking.html')
+def booking_page():
+    """Serve booking page"""
+    return send_from_directory('static', 'booking.html')
+
+@app.route('/gpa.html')
+def gpa_page():
+    """Serve GPA calculator page"""
+    return send_from_directory('static', 'gpa.html')
+
+@app.route('/users.html')
+def users_page():
+    """Serve user management page"""
+    return send_from_directory('static', 'users.html')
+
+@app.route('/maintenance.html')
+def maintenance_page():
+    """Serve maintenance page"""
+    return send_from_directory('static', 'maintenance.html')
+
+@app.route('/notifications.html')
+def notifications_page():
+    """Serve notifications page"""
+    return send_from_directory('static', 'notifications.html')
+
 if __name__ == '__main__':
     print("🚪 API Gateway Hub starting on port 5001...")
     print("📝 Default users:")
@@ -487,4 +514,6 @@ if __name__ == '__main__':
     print("🔐 Role-Based Access:")
     print("   Admin → User Management only")
     print("   Faculty/Student → Booking, GPA, Notifications, Maintenance")
+    print("")
+    print("🌐 Frontend available at: http://localhost:5001")
     app.run(host='0.0.0.0', port=5001, debug=True)

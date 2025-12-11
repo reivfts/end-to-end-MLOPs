@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Campus Services</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .notification-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .notification-item.unread {
+            background: #e7f3ff;
+            border-left-color: #2196F3;
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .notification-type {
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .notification-date {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .notification-message {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .mark-read-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .mark-read-btn:hover {
+            opacity: 0.8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="/dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <div class="page-title">🔔 Notifications</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>Your Notifications</h2>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterNotifications('all')">
+                    All
+                </button>
+                <button class="filter-tab" onclick="filterNotifications('unread')">
+                    Unread
+                </button>
+            </div>
+
+            <div id="notificationsList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>Loading notifications...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        let allNotifications = [];
+        let currentFilter = 'all';
+
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications/notifications', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                allNotifications = data.notifications || [];
+
+                renderNotifications();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                document.getElementById('notificationsList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <p>Error loading notifications</p>
+                    </div>
+                `;
+            }
+        }
+
+        function filterNotifications(filter) {
+            currentFilter = filter;
+
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const notificationsList = document.getElementById('notificationsList');
+
+            let filteredNotifications = allNotifications;
+            if (currentFilter === 'unread') {
+                filteredNotifications = allNotifications.filter(n => !n.read);
+            }
+
+            if (filteredNotifications.length === 0) {
+                notificationsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>No ${currentFilter === 'unread' ? 'unread ' : ''}notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            notificationsList.innerHTML = '';
+
+            filteredNotifications.forEach(notification => {
+                const notifDiv = document.createElement('div');
+                notifDiv.className = `notification-item ${!notification.read ? 'unread' : ''}`;
+
+                const createdDate = new Date(notification.created_at).toLocaleString();
+
+                notifDiv.innerHTML = `
+                    <div class="notification-header">
+                        <span class="notification-type">${notification.type}</span>
+                        <span class="notification-date">${createdDate}</span>
+                    </div>
+                    <div class="notification-message">${notification.message}</div>
+                    ${!notification.read ? `
+                        <button class="mark-read-btn" onclick="markAsRead(${notification.id})">
+                            Mark as Read
+                        </button>
+                    ` : ''}
+                `;
+
+                notificationsList.appendChild(notifDiv);
+            });
+        }
+
+        async function markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/api/notifications/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Update local state
+                    const notification = allNotifications.find(n => n.id === notificationId);
+                    if (notification) {
+                        notification.read = true;
+                    }
+                    renderNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Initialize
+        loadNotifications();
+    </script>
+</body>
+</html>

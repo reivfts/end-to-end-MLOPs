@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Booking - Campus Services</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .booking-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-slot:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .time-slot.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .time-slot.booked {
+            background: #ffebee;
+            border-color: #ef5350;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .booking-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .booking-info {
+            flex: 1;
+        }
+
+        .booking-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .booking-info p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .cancel-btn {
+            padding: 8px 16px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .cancel-btn:hover {
+            background: #ff3838;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media (max-width: 968px) {
+            .booking-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="/dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <div class="page-title">📅 Room Booking</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="booking-grid">
+            <!-- New Booking Section -->
+            <div class="section">
+                <h2>Create New Booking</h2>
+                <div class="message" id="message"></div>
+                
+                <div class="form-group">
+                    <label for="roomSelect">Select Room</label>
+                    <select id="roomSelect">
+                        <option value="">Loading rooms...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dateSelect">Select Date</label>
+                    <input type="date" id="dateSelect">
+                </div>
+
+                <div class="form-group">
+                    <label>Select Time Slot</label>
+                    <div class="time-slots" id="timeSlots">
+                        <!-- Time slots will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="purposeInput">Purpose (optional)</label>
+                    <input type="text" id="purposeInput" placeholder="e.g., Team Meeting">
+                </div>
+
+                <button class="submit-btn" id="bookBtn" onclick="createBooking()">
+                    Create Booking
+                </button>
+            </div>
+
+            <!-- My Bookings Section -->
+            <div class="section">
+                <h2>My Bookings</h2>
+                <div id="bookingsList">
+                    <div class="empty-state">Loading bookings...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rooms = [];
+        let selectedSlot = null;
+        let selectedRoom = null;
+        let bookedSlots = [];
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dateSelect').value = today;
+        document.getElementById('dateSelect').min = today;
+
+        async function loadRooms() {
+            try {
+                const response = await fetch('/api/booking/rooms', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                rooms = data.rooms || [];
+                
+                const roomSelect = document.getElementById('roomSelect');
+                roomSelect.innerHTML = '<option value="">-- Select a room --</option>';
+                
+                rooms.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = `${room.name} (Capacity: ${room.capacity})`;
+                    roomSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+            }
+        }
+
+        async function loadTimeSlots() {
+            try {
+                const response = await fetch('/api/booking/slots', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                const slots = data.slots || [];
+                
+                const timeSlotsDiv = document.getElementById('timeSlots');
+                timeSlotsDiv.innerHTML = '';
+                
+                slots.forEach(slot => {
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'time-slot';
+                    slotDiv.textContent = slot;
+                    slotDiv.onclick = () => selectSlot(slot, slotDiv);
+                    timeSlotsDiv.appendChild(slotDiv);
+                });
+            } catch (error) {
+                console.error('Error loading time slots:', error);
+            }
+        }
+
+        async function checkAvailability() {
+            const roomId = document.getElementById('roomSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            
+            if (!roomId || !date) return;
+            
+            try {
+                const response = await fetch(`/api/booking/bookings/${date}?room_id=${roomId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                bookedSlots = data.bookings.map(b => b.time_slot);
+                
+                // Update slot availability
+                document.querySelectorAll('.time-slot').forEach(slot => {
+                    const slotText = slot.textContent;
+                    if (bookedSlots.includes(slotText)) {
+                        slot.classList.add('booked');
+                        slot.onclick = null;
+                    } else {
+                        slot.classList.remove('booked');
+                        slot.onclick = () => selectSlot(slotText, slot);
+                    }
+                });
+            } catch (error) {
+                console.error('Error checking availability:', error);
+            }
+        }
+
+        function selectSlot(slot, element) {
+            // Remove previous selection
+            document.querySelectorAll('.time-slot').forEach(s => {
+                if (!s.classList.contains('booked')) {
+                    s.classList.remove('selected');
+                }
+            });
+            
+            // Add new selection
+            element.classList.add('selected');
+            selectedSlot = slot;
+        }
+
+        async function createBooking() {
+            const roomId = document.getElementById('roomSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            const purpose = document.getElementById('purposeInput').value;
+            
+            if (!roomId || !date || !selectedSlot) {
+                showMessage('Please select room, date, and time slot', 'error');
+                return;
+            }
+            
+            const bookBtn = document.getElementById('bookBtn');
+            bookBtn.disabled = true;
+            bookBtn.textContent = 'Creating...';
+            
+            try {
+                const response = await fetch('/api/booking/bookings', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        room_id: parseInt(roomId),
+                        date: date,
+                        time_slot: selectedSlot,
+                        purpose: purpose || 'Meeting'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Booking created successfully!', 'success');
+                    loadMyBookings();
+                    checkAvailability();
+                    document.getElementById('purposeInput').value = '';
+                    selectedSlot = null;
+                    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                } else {
+                    showMessage(data.error || 'Failed to create booking', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                bookBtn.disabled = false;
+                bookBtn.textContent = 'Create Booking';
+            }
+        }
+
+        async function loadMyBookings() {
+            try {
+                const response = await fetch('/api/booking/my-bookings', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                const bookings = data.bookings || [];
+                
+                const bookingsList = document.getElementById('bookingsList');
+                
+                if (bookings.length === 0) {
+                    bookingsList.innerHTML = '<div class="empty-state">No bookings yet</div>';
+                    return;
+                }
+                
+                bookingsList.innerHTML = '';
+                
+                bookings.forEach(booking => {
+                    const bookingItem = document.createElement('div');
+                    bookingItem.className = 'booking-item';
+                    
+                    const room = rooms.find(r => r.id === booking.room_id);
+                    
+                    bookingItem.innerHTML = `
+                        <div class="booking-info">
+                            <h4>${room ? room.name : `Room ${booking.room_id}`}</h4>
+                            <p>📅 ${booking.date} | ⏰ ${booking.time_slot}</p>
+                            <p>${booking.purpose}</p>
+                        </div>
+                        <button class="cancel-btn" onclick="cancelBooking(${booking.id})">
+                            Cancel
+                        </button>
+                    `;
+                    
+                    bookingsList.appendChild(bookingItem);
+                });
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+            }
+        }
+
+        async function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/booking/bookings/${bookingId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    showMessage('Booking cancelled successfully', 'success');
+                    loadMyBookings();
+                    checkAvailability();
+                } else {
+                    const data = await response.json();
+                    showMessage(data.error || 'Failed to cancel booking', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}`;
+            
+            setTimeout(() => {
+                message.className = 'message';
+            }, 5000);
+        }
+
+        // Event listeners
+        document.getElementById('roomSelect').addEventListener('change', checkAvailability);
+        document.getElementById('dateSelect').addEventListener('change', checkAvailability);
+
+        // Initialize
+        loadRooms();
+        loadTimeSlots();
+        loadMyBookings();
+    </script>
+</body>
+</html>

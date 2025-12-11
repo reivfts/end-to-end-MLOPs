@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Services - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #ff3838;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .welcome-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-section h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .welcome-section p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .service-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .service-card.disabled:hover {
+            transform: none;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .service-title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .service-description {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .service-access {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .access-granted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .access-denied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .no-access-message {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-access-message h2 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-brand">🎓 Campus Services</div>
+        <div class="user-info">
+            <span id="userName"></span>
+            <span class="user-badge" id="userRole"></span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="welcome-section">
+            <h1 id="welcomeTitle">Welcome!</h1>
+            <p>Select a service below to get started</p>
+        </div>
+
+        <div class="services-grid" id="servicesGrid">
+            <!-- Services will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        const services = [
+            {
+                id: 'users',
+                icon: '👥',
+                title: 'User Management',
+                description: 'Manage users, roles, and permissions',
+                url: '/users.html',
+                roles: ['admin']
+            },
+            {
+                id: 'booking',
+                icon: '📅',
+                title: 'Room Booking',
+                description: 'Reserve conference rooms and facilities',
+                url: '/booking.html',
+                roles: ['faculty', 'student']
+            },
+            {
+                id: 'gpa',
+                icon: '📊',
+                title: 'GPA Calculator',
+                description: 'Calculate weighted GPA for courses',
+                url: '/gpa.html',
+                roles: ['faculty', 'student']
+            },
+            {
+                id: 'maintenance',
+                icon: '🔧',
+                title: 'Maintenance Tickets',
+                description: 'Submit and track maintenance requests',
+                url: '/maintenance.html',
+                roles: ['faculty', 'student']
+            },
+            {
+                id: 'notifications',
+                icon: '🔔',
+                title: 'Notifications',
+                description: 'View system notifications and alerts',
+                url: '/notifications.html',
+                roles: ['faculty', 'student']
+            }
+        ];
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            if (!token || !user) {
+                window.location.href = '/login.html';
+                return null;
+            }
+            
+            return JSON.parse(user);
+        }
+
+        function loadDashboard() {
+            const user = checkAuth();
+            if (!user) return;
+            
+            // Update user info
+            document.getElementById('userName').textContent = user.name || user.email;
+            document.getElementById('userRole').textContent = user.role.toUpperCase();
+            document.getElementById('welcomeTitle').textContent = `Welcome, ${user.name || user.email}!`;
+            
+            // Load services based on role
+            const servicesGrid = document.getElementById('servicesGrid');
+            servicesGrid.innerHTML = '';
+            
+            let hasAccess = false;
+            
+            services.forEach(service => {
+                const hasPermission = service.roles.includes(user.role);
+                if (hasPermission) hasAccess = true;
+                
+                const card = document.createElement('div');
+                card.className = `service-card ${!hasPermission ? 'disabled' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="service-icon">${service.icon}</div>
+                    <div class="service-title">${service.title}</div>
+                    <div class="service-description">${service.description}</div>
+                    <span class="service-access ${hasPermission ? 'access-granted' : 'access-denied'}">
+                        ${hasPermission ? '✓ Access Granted' : '✗ Access Denied'}
+                    </span>
+                `;
+                
+                if (hasPermission) {
+                    card.addEventListener('click', () => {
+                        window.location.href = service.url;
+                    });
+                }
+                
+                servicesGrid.appendChild(card);
+            });
+            
+            if (!hasAccess) {
+                servicesGrid.innerHTML = `
+                    <div class="no-access-message">
+                        <h2>No Services Available</h2>
+                        <p>Your role does not have access to any services. Please contact your administrator.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+    </script>
+</body>
+</html>
