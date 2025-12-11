@@ -10,8 +10,9 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code and schema
 COPY main.py .
+COPY schema.sql .
 
 # Expose port
 EXPOSE 8000

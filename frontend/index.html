@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLOps Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .nav-brand {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: none;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info.logged-in {
+            display: flex;
+        }
+
+        .username-display {
+            color: white;
+            font-weight: 600;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .auth-buttons.logged-in {
+            display: none;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-login {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-login:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-signup {
+            background: #667eea;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-signup:hover {
+            background: #5568d3;
+        }
+
+        .btn-logout {
+            background: #f5576c;
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #e63d57;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 50px 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .service-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .service-card.disabled:hover {
+            transform: none;
+        }
+
+        .service-header {
+            padding: 30px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .service-icon {
+            font-size: 2.5em;
+        }
+
+        .service-body {
+            padding: 20px 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .service-description {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .service-link {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .service-link:hover {
+            color: #764ba2;
+        }
+
+        .booking-header { background: linear-gradient(135deg, #667eea, #5568d3); }
+        .maintenance-header { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+        footer {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .form-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #5568d3;
+        }
+
+        .btn-cancel {
+            background: #ddd;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #ccc;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .toggle-form a {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .toggle-form a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .container {
+                padding: 30px 20px;
+            }
+
+            .modal-content {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">🚀 MLOps Platform</div>
+        <div class="nav-right">
+            <div class="user-info" id="userInfo">
+                <span class="username-display" id="usernameDisplay"></span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+            <div class="auth-buttons" id="authButtons">
+                <button class="btn-login" onclick="showLoginModal()">Login</button>
+                <button class="btn-signup" onclick="showSignupModal()">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Welcome to MLOps</h1>
+            <p id="heroSubtitle">Manage your machine learning operations with ease</p>
+        </div>
+
+        <div class="services" id="services">
+            <div class="service-card" onclick="accessService('booking')" id="bookingCard">
+                <div class="service-header booking-header">
+                    <span class="service-icon">🏨</span>
+                    <span>Booking</span>
+                </div>
+                <div class="service-body">
+                    <p class="service-description">
+                        Book rooms for meetings and team events
+                    </p>
+                    <div>
+                        <a href="booking-frontend.html" class="service-link">Go to Booking →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card" onclick="accessService('maintenance')" id="maintenanceCard">
+                <div class="service-header maintenance-header">
+                    <span class="service-icon">🔧</span>
+                    <span>Maintenance</span>
+                </div>
+                <div class="service-body">
+                    <p class="service-description">
+                        Track and manage system maintenance tickets and issues
+                    </p>
+                    <div>
+                        <a href="maintenance-frontend.html" class="service-link">Go to Maintenance →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">Login</div>
+            <div class="error-message" id="loginError"></div>
+            <div class="success-message" id="loginSuccess"></div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn-submit">Login</button>
+                    <button type="button" class="btn-cancel" onclick="closeLoginModal()">Cancel</button>
+                </div>
+                <div class="toggle-form">
+                    Don't have an account? <a onclick="switchToSignup()">Sign up</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <div class="modal-header">Create Account</div>
+            <div class="error-message" id="signupError"></div>
+            <div class="success-message" id="signupSuccess"></div>
+            <form onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label for="signupUsername">Username:</label>
+                    <input type="text" id="signupUsername" required placeholder="john_doe">
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email:</label>
+                    <input type="email" id="signupEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password:</label>
+                    <input type="password" id="signupPassword" required placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label for="signupConfirm">Confirm Password:</label>
+                    <input type="password" id="signupConfirm" required placeholder="••••••••">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn-submit">Sign Up</button>
+                    <button type="button" class="btn-cancel" onclick="closeSignupModal()">Cancel</button>
+                </div>
+                <div class="toggle-form">
+                    Already have an account? <a onclick="switchToLogin()">Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 MLOps Platform. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/user';
+        let currentUser = null;
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedUser = localStorage.getItem('mlops_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUIForLogin();
+            }
+            // Services are always enabled for browsing
+            enableServices();
+            console.log('✅ MLOps Platform Loaded');
+        });
+
+        // Modal functions
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('show');
+            clearLoginForm();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('show');
+        }
+
+        function showSignupModal() {
+            document.getElementById('signupModal').classList.add('show');
+            clearSignupForm();
+        }
+
+        function closeSignupModal() {
+            document.getElementById('signupModal').classList.remove('show');
+        }
+
+        function switchToSignup() {
+            closeLoginModal();
+            showSignupModal();
+        }
+
+        function switchToLogin() {
+            closeSignupModal();
+            showLoginModal();
+        }
+
+        // Auth functions
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentUser = {
+                        id: data.id,
+                        username: data.username,
+                        email: data.email
+                    };
+                    localStorage.setItem('mlops_user', JSON.stringify(currentUser));
+                    showMessage('loginSuccess', 'Login successful! Redirecting...');
+                    setTimeout(() => {
+                        closeLoginModal();
+                        updateUIForLogin();
+                    }, 1500);
+                } else {
+                    showError('loginError', data.detail || 'Login failed');
+                }
+            } catch (error) {
+                showError('loginError', 'Connection error: ' + error.message);
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirm = document.getElementById('signupConfirm').value;
+
+            if (password !== confirm) {
+                showError('signupError', 'Passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('signupSuccess', 'Account created! Logging you in...');
+                    setTimeout(() => {
+                        currentUser = {
+                            id: data.id,
+                            username: data.username,
+                            email: data.email
+                        };
+                        localStorage.setItem('mlops_user', JSON.stringify(currentUser));
+                        closeSignupModal();
+                        updateUIForLogin();
+                    }, 1500);
+                } else {
+                    showError('signupError', data.detail || 'Signup failed');
+                }
+            } catch (error) {
+                showError('signupError', 'Connection error: ' + error.message);
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('mlops_user');
+            updateUIForLogout();
+        }
+
+        function updateUIForLogin() {
+            document.getElementById('userInfo').classList.add('logged-in');
+            document.getElementById('authButtons').classList.remove('logged-in');
+            document.getElementById('usernameDisplay').textContent = `Welcome, ${currentUser.username}!`;
+            document.getElementById('heroSubtitle').textContent = 'You are logged in. Choose a service.';
+        }
+
+        function updateUIForLogout() {
+            document.getElementById('userInfo').classList.remove('logged-in');
+            document.getElementById('authButtons').classList.add('logged-in');
+            document.getElementById('heroSubtitle').textContent = 'Manage your machine learning operations with ease';
+        }
+
+        function enableServices() {
+            document.getElementById('bookingCard').classList.remove('disabled');
+            document.getElementById('maintenanceCard').classList.remove('disabled');
+        }
+
+        function disableServices() {
+            document.getElementById('bookingCard').classList.add('disabled');
+            document.getElementById('maintenanceCard').classList.add('disabled');
+        }
+
+        function accessService(service) {
+            // Allow browsing without login, but services will handle login requirement for actions
+            if (service === 'booking') {
+                window.location.href = 'booking-frontend.html';
+            } else if (service === 'maintenance') {
+                window.location.href = 'maintenance-frontend.html';
+            }
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.add('show');
+            setTimeout(() => element.classList.remove('show'), 4000);
+        }
+
+        function showMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.add('show');
+        }
+
+        function clearLoginForm() {
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('loginSuccess').classList.remove('show');
+        }
+
+        function clearSignupForm() {
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('signupConfirm').value = '';
+            document.getElementById('signupError').classList.remove('show');
+            document.getElementById('signupSuccess').classList.remove('show');
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const loginModal = document.getElementById('loginModal');
+            const signupModal = document.getElementById('signupModal');
+            if (event.target == loginModal) {
+                closeLoginModal();
+            }
+            if (event.target == signupModal) {
+                closeSignupModal();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Booking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .auth-section h2 {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.active {
+            display: block;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .user-info p {
+            color: #555;
+            margin: 5px 0;
+        }
+
+        .user-info strong {
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tab-button:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .booking-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .booking-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .booking-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .booking-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .booking-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            color: #555;
+        }
+
+        .booking-detail:last-child {
+            border-bottom: none;
+        }
+
+        .booking-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .booking-value {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .time-slot {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .room-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .room-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .room-card.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .room-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .booking-list {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .auth-section {
+                max-width: 100%;
+            }
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .relative {
+            position: relative;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-morning {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .badge-afternoon {
+            background: #fab1a0;
+            color: #d63031;
+        }
+
+        .badge-evening {
+            background: #81ecec;
+            color: #00b894;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Section -->
+        <div id="authSection" class="auth-section">
+            <h2>🔐 Login to Booking System</h2>
+            <div id="authAlert" class="alert"></div>
+            
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username">
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-primary" onclick="handleLogin()">Login</button>
+                <button class="btn-secondary" onclick="showRegisterForm()">Register</button>
+            </div>
+
+            <div id="registerForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                <h3 style="color: #333; margin-bottom: 15px;">Create New Account</h3>
+                
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" placeholder="Choose a username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" placeholder="Create a password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="regFirstName">First Name</label>
+                    <input type="text" id="regFirstName" placeholder="Your first name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="regLastName">Last Name</label>
+                    <input type="text" id="regLastName" placeholder="Your last name">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" onclick="handleRegister()">Create Account</button>
+                    <button class="btn-secondary" onclick="hideRegisterForm()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="main-content">
+            <div class="relative">
+                <button class="btn-danger logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+
+            <div class="header">
+                <h1>📅 Room Booking System</h1>
+                <div class="user-info">
+                    <p>Welcome, <strong id="userName">User</strong>!</p>
+                    <p>User ID: <code id="userId" style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;"></code></p>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('bookingTab')">Create Booking</button>
+                <button class="tab-button" onclick="switchTab('myBookingsTab')">My Bookings</button>
+                <button class="tab-button" onclick="switchTab('allBookingsTab')">All Bookings</button>
+            </div>
+
+            <!-- Create Booking Tab -->
+            <div id="bookingTab" class="tab-content active">
+                <div class="section">
+                    <h2>Create New Booking</h2>
+                    
+                    <div class="form-group">
+                        <label>Select Room</label>
+                        <div id="roomGrid" class="room-grid">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                Loading rooms...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bookingDate">Date</label>
+                            <input type="date" id="bookingDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bookingTimeSlot">Time Slot</label>
+                            <select id="bookingTimeSlot">
+                                <option value="">Select time slot</option>
+                                <option value="morning">🌅 Morning (08:00 - 12:00)</option>
+                                <option value="afternoon">☀️ Afternoon (12:00 - 16:00)</option>
+                                <option value="evening">🌙 Evening (16:00 - 20:00)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="handleCreateBooking()">Create Booking</button>
+                        <button class="btn-secondary" onclick="resetBookingForm()">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Bookings Tab -->
+            <div id="myBookingsTab" class="tab-content">
+                <div class="section">
+                    <h2>My Bookings</h2>
+                    <div id="myBookingsList" class="booking-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading your bookings...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Bookings Tab -->
+            <div id="allBookingsTab" class="tab-content">
+                <div class="section">
+                    <h2>All Bookings</h2>
+                    <div id="allBookingsList" class="booking-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading all bookings...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🏛️ Room Booking System | Built with ❤️ for seamless room management</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Using API Gateway
+        const GATEWAY_URL = 'http://localhost:8080';
+        const USER_SERVICE_URL = `${GATEWAY_URL}/api/user`;
+        const BOOKING_SERVICE_URL = `${GATEWAY_URL}/api/booking`;
+
+        // State management
+        let currentUser = null;
+        let selectedRoomId = null;
+        let rooms = [];
+        let bookings = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setMinDate();
+            checkAuthStatus();
+        });
+
+        function setMinDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('bookingDate').setAttribute('min', today);
+        }
+
+        // Authentication functions
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showAuthAlert('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${USER_SERVICE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAuthAlert(data.detail || data.error || 'Login failed', 'error');
+                    return;
+                }
+
+                currentUser = data;
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                localStorage.setItem('mlops_user', JSON.stringify(currentUser));
+                showMainContent();
+                loadRooms();
+                loadMyBookings();
+                loadAllBookings();
+                showAuthAlert('Login successful!', 'success');
+            } catch (error) {
+                showAuthAlert('Connection error: ' + error.message, 'error');
+            }
+        }
+
+        async function handleRegister() {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const lastName = document.getElementById('regLastName').value.trim();
+
+            if (!username || !password) {
+                showAuthAlert('Username and password are required', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${USER_SERVICE_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        email: `${username}@booking.local`,
+                        password,
+                        first_name: firstName,
+                        last_name: lastName,
+                        role: 'user'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAuthAlert(data.detail || data.error || 'Registration failed', 'error');
+                    return;
+                }
+
+                showAuthAlert('Registration successful! Please login.', 'success');
+                hideRegisterForm();
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('loginPassword').value = '';
+            } catch (error) {
+                showAuthAlert('Connection error: ' + error.message, 'error');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('user');
+            selectedRoomId = null;
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('mainContent').classList.remove('active');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            showAlert('Logged out successfully', 'info');
+        }
+
+        function showRegisterForm() {
+            document.getElementById('registerForm').style.display = 'block';
+        }
+
+        function hideRegisterForm() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regFirstName').value = '';
+            document.getElementById('regLastName').value = '';
+        }
+
+        function showMainContent() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('mainContent').classList.add('active');
+            document.getElementById('userName').textContent = currentUser.username;
+            // Ensure currentUser has an id field
+            if (!currentUser.id && currentUser.user_id) {
+                currentUser.id = currentUser.user_id;
+            }
+            document.getElementById('userId').textContent = currentUser.id || 'Loading...';
+        }
+
+        // Booking functions
+        async function loadRooms() {
+            try {
+                const response = await fetch(`${BOOKING_SERVICE_URL}/rooms`);
+                const data = await response.json();
+                rooms = data.rooms;
+                renderRooms();
+            } catch (error) {
+                showAlert('Failed to load rooms', 'error');
+            }
+        }
+
+        function renderRooms() {
+            const roomGrid = document.getElementById('roomGrid');
+            if (rooms.length === 0) {
+                roomGrid.innerHTML = '<div class="empty-state">No rooms available</div>';
+                return;
+            }
+
+            roomGrid.innerHTML = rooms.map(room => `
+                <div class="room-card ${selectedRoomId === room.id ? 'selected' : ''}" 
+                     onclick="selectRoom(${room.id})">
+                    <h3>🏢 ${room.name}</h3>
+                    <p style="color: #666; font-size: 0.9em;">Room ID: ${room.id}</p>
+                </div>
+            `).join('');
+        }
+
+        function selectRoom(roomId) {
+            selectedRoomId = selectedRoomId === roomId ? null : roomId;
+            renderRooms();
+        }
+
+        async function handleCreateBooking() {
+            if (!selectedRoomId) {
+                showAlert('Please select a room', 'error');
+                return;
+            }
+
+            const date = document.getElementById('bookingDate').value;
+            const timeSlot = document.getElementById('bookingTimeSlot').value;
+
+            if (!date || !timeSlot) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                // Ensure user ID is available
+                const userId = currentUser.id || currentUser.user_id;
+                if (!userId) {
+                    showAlert('User ID not available. Please login again.', 'error');
+                    return;
+                }
+
+                const response = await fetch(`${BOOKING_SERVICE_URL}/bookings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        room_id: selectedRoomId,
+                        date: date,
+                        user_id: userId,
+                        username: currentUser.username,
+                        time_slot: timeSlot
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert(data.detail || 'Failed to create booking', 'error');
+                    return;
+                }
+
+                showAlert('Booking created successfully!', 'success');
+                resetBookingForm();
+                loadMyBookings();
+                loadAllBookings();
+                switchTab('myBookingsTab');
+            } catch (error) {
+                showAlert('Connection error: ' + error.message, 'error');
+            }
+        }
+
+        async function loadMyBookings() {
+            try {
+                const response = await fetch(`${BOOKING_SERVICE_URL}/bookings/user/${currentUser.id}`);
+                const data = await response.json();
+                bookings = data.bookings;
+                renderMyBookings();
+            } catch (error) {
+                showAlert('Failed to load your bookings', 'error');
+            }
+        }
+
+        async function loadAllBookings() {
+            try {
+                const response = await fetch(`${BOOKING_SERVICE_URL}/bookings`);
+                const data = await response.json();
+                renderAllBookings(data.bookings);
+            } catch (error) {
+                showAlert('Failed to load bookings', 'error');
+            }
+        }
+
+        function renderMyBookings() {
+            const container = document.getElementById('myBookingsList');
+            if (bookings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No bookings yet</p></div>';
+                return;
+            }
+
+            container.innerHTML = bookings.map(booking => `
+                <div class="booking-card">
+                    <h3>🏢 ${booking.room_name}</h3>
+                    <div class="booking-detail">
+                        <span class="booking-label">Date:</span>
+                        <span class="booking-value">${booking.date}</span>
+                    </div>
+                    <div class="booking-detail">
+                        <span class="booking-label">Time:</span>
+                        <span class="booking-value">${booking.time_slot}</span>
+                    </div>
+                    <div class="booking-detail">
+                        <span class="booking-label">Booked:</span>
+                        <span class="booking-value">${new Date(booking.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <button class="btn-danger" onclick="handleCancelBooking(${booking.id})" style="width: 100%; margin-top: 15px;">
+                        ❌ Cancel Booking
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderAllBookings(allBookings) {
+            const container = document.getElementById('allBookingsList');
+            if (allBookings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No bookings</p></div>';
+                return;
+            }
+
+            container.innerHTML = allBookings.map(booking => {
+                const isOwner = booking.user_id === currentUser.id;
+                return `
+                    <div class="booking-card">
+                        <h3>🏢 ${booking.room_name}</h3>
+                        <div class="booking-detail">
+                            <span class="booking-label">Date:</span>
+                            <span class="booking-value">${booking.date}</span>
+                        </div>
+                        <div class="booking-detail">
+                            <span class="booking-label">Time:</span>
+                            <span class="booking-value"><span class="badge badge-${booking.time_slot}">${booking.time_slot}</span></span>
+                        </div>
+                        <div class="booking-detail">
+                            <span class="booking-label">Booked by:</span>
+                            <span class="booking-value">${booking.username}</span>
+                        </div>
+                        <div class="booking-detail">
+                            <span class="booking-label">Status:</span>
+                            <span class="booking-value">${isOwner ? '✅ Your booking' : '📌 Other user'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleCancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BOOKING_SERVICE_URL}/bookings/${bookingId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUser.id
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert(data.detail || 'Failed to cancel booking', 'error');
+                    return;
+                }
+
+                showAlert('Booking cancelled successfully', 'success');
+                loadMyBookings();
+                loadAllBookings();
+            } catch (error) {
+                showAlert('Connection error: ' + error.message, 'error');
+            }
+        }
+
+        function resetBookingForm() {
+            selectedRoomId = null;
+            document.getElementById('bookingDate').value = '';
+            document.getElementById('bookingTimeSlot').value = '';
+            renderRooms();
+        }
+
+        // UI functions
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data if needed
+            if (tabName === 'myBookingsTab') {
+                loadMyBookings();
+            } else if (tabName === 'allBookingsTab') {
+                loadAllBookings();
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} show`;
+            alertDiv.textContent = message;
+            alertContainer.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 4000);
+        }
+
+        function showAuthAlert(message, type) {
+            const alert = document.getElementById('authAlert');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+        }
+
+        function checkAuthStatus() {
+            // Check both localStorage keys for compatibility
+            let savedUser = localStorage.getItem('mlops_user') || localStorage.getItem('user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                // Save to both keys for consistency
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                localStorage.setItem('mlops_user', JSON.stringify(currentUser));
+                showMainContent();
+                loadRooms();
+                loadMyBookings();
+                loadAllBookings();
+            }
+        }
+    </script>
+</body>
+</html>
