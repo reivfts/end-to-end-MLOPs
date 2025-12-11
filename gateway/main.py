@@ -184,7 +184,7 @@ def login():
         token = create_access_token(user_data)
         
         return jsonify({
-            'accessToken': token,
+            'token': token,
             'user': {
                 'id': user['id'],
                 'name': user['name'],
@@ -365,7 +365,8 @@ def users_list():
 @role_required('admin')
 def users_detail(user_id):
     """Admin only: Get, update, or delete user"""
-    return proxy_request(SERVICES['users'], f'/users/{user_id}', request.method, request.get_json())
+    data = request.get_json() if request.method in ['PUT', 'POST'] else None
+    return proxy_request(SERVICES['users'], f'/users/{user_id}', request.method, data)
 
 @app.route('/api/users/by-role/<role>', methods=['GET'])
 @token_required
@@ -464,6 +465,23 @@ def maintenance_info():
         'url': 'ws://localhost:8080',
         'frontend': 'http://localhost:8080/websocket_frontend.html'
     }), 200
+
+@app.route('/api/maintenance/tickets', methods=['GET', 'POST'])
+@token_required
+@role_required('faculty', 'student')
+def maintenance_tickets():
+    """Faculty/Student: Get all tickets or create new ticket"""
+    if request.method == 'GET':
+        return proxy_request(SERVICES['maintenance'], '/tickets', 'GET')
+    else:  # POST
+        return proxy_request(SERVICES['maintenance'], '/tickets', 'POST', request.get_json())
+
+@app.route('/api/maintenance/tickets/<int:ticket_id>', methods=['GET', 'PUT', 'DELETE'])
+@token_required
+@role_required('faculty', 'student')
+def maintenance_ticket_detail(ticket_id):
+    """Faculty/Student: Get, update, or delete specific ticket"""
+    return proxy_request(SERVICES['maintenance'], f'/tickets/{ticket_id}', request.method, request.get_json() if request.method == 'PUT' else None)
 
 # ============================================================
 # Frontend Routes - Serve HTML Pages
