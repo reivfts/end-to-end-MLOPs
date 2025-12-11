@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudMLOPS - 6 Microservices</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .service-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .service-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .service-port {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .service-links {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .auth-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .auth-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .credentials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .credential-card {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .role-admin { background: #fecaca; color: #991b1b; }
+        .role-faculty { background: #bfdbfe; color: #1e40af; }
+        .role-student { background: #bbf7d0; color: #166534; }
+        
+        .cred-text {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .response-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        pre {
+            margin: 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CloudMLOPS Dashboard</h1>
+        <div class="subtitle">6 Python Microservices with JWT Authentication & RBAC</div>
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .service-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .service-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .service-port {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .service-links {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .auth-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .auth-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .credentials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .credential-card {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .role-admin { background: #fecaca; color: #991b1b; }
+        .role-faculty { background: #bfdbfe; color: #1e40af; }
+        .role-student { background: #bbf7d0; color: #166534; }
+        
+        .cred-text {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .test-area {
+            margin-top: 1rem;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+        }
+        
+        .response-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        pre {
+            margin: 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CloudMLOPS Services Dashboard</h1>
+        
+        <!-- Authentication Section -->
+        <div class="auth-section">
+            <h2 class="auth-title">🔐 Test Credentials</h2>
+            <div class="credentials-grid">
+                <div class="credential-card">
+                    <span class="role-badge role-admin">Admin</span>
+                    <div class="cred-text">
+                        <div><strong>Email:</strong> admin@example.com</div>
+                        <div><strong>Password:</strong> admin123</div>
+                    </div>
+                </div>
+                <div class="credential-card">
+                    <span class="role-badge role-faculty">Faculty</span>
+                    <div class="cred-text">
+                        <div><strong>Email:</strong> faculty@example.com</div>
+                        <div><strong>Password:</strong> faculty123</div>
+                    </div>
+                </div>
+                <div class="credential-card">
+                    <span class="role-badge role-student">Student</span>
+                    <div class="cred-text">
+                        <div><strong>Email:</strong> student@example.com</div>
+                        <div><strong>Password:</strong> student123</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Services Grid -->
+        <div class="services-grid">
+            <!-- Gateway/Auth Service -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-title">🚪 Gateway & Auth</h3>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-info">
+                    Port: <span class="service-port">5001</span>
+                </div>
+                <div class="service-info">JWT Authentication, Login, User Management</div>
+                <div class="service-links">
+                    <button class="btn btn-primary" onclick="testLogin()">Test Login</button>
+                    <button class="btn btn-secondary" onclick="testEndpoint('http://localhost:5001', 'Gateway')">Health</button>
+                </div>
+            </div>
+            
+            <!-- Booking Service -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-title">� Booking Service</h3>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-info">
+                    Port: <span class="service-port">8001</span>
+                </div>
+                <div class="service-info">Room Booking with 8 Time Slots + RBAC</div>
+                <div class="service-links">
+                    <button class="btn btn-primary" onclick="testBooking()">Test Booking</button>
+                    <button class="btn btn-secondary" onclick="testEndpoint('http://localhost:8001', 'Booking')">Health</button>
+                </div>
+            </div>
+            
+            <!-- User Management -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-title">� User Management</h3>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-info">
+                    Port: <span class="service-port">8002</span>
+                </div>
+                <div class="service-info">User CRUD, Role Management (Admin Only)</div>
+                <div class="service-links">
+                    <button class="btn btn-primary" onclick="testUsers()">List Users</button>
+                    <button class="btn btn-secondary" onclick="testEndpoint('http://localhost:8002', 'Users')">Health</button>
+                </div>
+            </div>
+            
+            <!-- GPA Calculator -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-title">� GPA Calculator</h3>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-info">
+                    Port: <span class="service-port">8003</span>
+                </div>
+                <div class="service-info">Weighted GPA Calculation (0.0-4.0)</div>
+                <div class="service-links">
+                    <button class="btn btn-primary" onclick="testGPA()">Calculate GPA</button>
+                    <button class="btn btn-secondary" onclick="testEndpoint('http://localhost:8003', 'GPA')">Health</button>
+                </div>
+            </div>
+            
+            <!-- Notification Service -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-title">� Notifications</h3>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-info">
+                    Port: <span class="service-port">8004</span>
+                </div>
+                <div class="service-info">Event Logging & Notification History</div>
+                <div class="service-links">
+                    <button class="btn btn-primary" onclick="testNotifications()">Get Notifications</button>
+                    <button class="btn btn-secondary" onclick="testEndpoint('http://localhost:8004', 'Notifications')">Health</button>
+                </div>
+            </div>
+            
+            <!-- Maintenance Service -->
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-title">� Maintenance</h3>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-info">
+                    Port: <span class="service-port">8080</span>
+                </div>
+                <div class="service-info">NLP-Powered Ticketing + WebSocket</div>
+                <div class="service-links">
+                    <a href="file:///Users/reivfts/Desktop/cloudMLOPS/maintenance/websocket_frontend.html" target="_blank" class="btn btn-primary">Open Dashboard</a>
+                    <button class="btn btn-secondary" onclick="alert('WebSocket service - check logs')">Info</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Section -->
+        <div class="test-section">
+            <h2 class="auth-title">🧪 API Test Console</h2>
+            <div class="test-area">
+                <div id="response-box" class="response-box">
+                    <pre>Click a test button to see results...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let token = null;
+        
+        function log(message) {
+            const responseBox = document.getElementById('response-box');
+            responseBox.innerHTML = `<pre>${message}</pre>`;
+        }
+        
+        async function testEndpoint(url, name) {
+            try {
+                const response = await fetch(`${url}/health`);
+                const data = await response.json();
+                log(`✅ ${name} Service is running!\n\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ ${name} Service Error:\n\n${error.message}\n\nMake sure the service is running on ${url}`);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                log('🔄 Logging in as admin...');
+                const response = await fetch('http://localhost:5001/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@example.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.accessToken;
+                    log(`✅ Login Successful!\n\nToken: ${token.substring(0, 50)}...\n\nUser Info:\n${JSON.stringify(data.user, null, 2)}\n\n🎉 Token saved! You can now test other services.`);
+                } else {
+                    log(`❌ Login Failed:\n${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}\n\nMake sure Gateway is running on port 5001`);
+            }
+        }
+        
+        async function testGPA() {
+            if (!token) {
+                log('⚠️ Please login first to get a token!');
+                return;
+            }
+            
+            try {
+                log('🔄 Calculating GPA...');
+                const response = await fetch('http://localhost:8003/calculate', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        classes: [
+                            { gpa: 3.7, weight: 3 },
+                            { gpa: 4.0, weight: 3 },
+                            { gpa: 3.3, weight: 2 }
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ GPA Calculated!\n\nInput:\n- Class 1: GPA 3.7, Weight 3\n- Class 2: GPA 4.0, Weight 3\n- Class 3: GPA 3.3, Weight 2\n\nResult: ${data.gpa}\n\nCalculation: (3.7×3 + 4.0×3 + 3.3×2) / (3+3+2) = ${data.gpa}`);
+                } else {
+                    log(`❌ Calculation Failed:\n${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}\n\nMake sure GPA Calculator is running on port 8003`);
+            }
+        }
+        
+        async function testBooking() {
+            if (!token) {
+                log('⚠️ Please login first to get a token!');
+                return;
+            }
+            
+            try {
+                log('🔄 Fetching available rooms...');
+                const response = await fetch('http://localhost:8001/rooms', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Booking Service Active!\n\nAvailable Rooms:\n${JSON.stringify(data.rooms, null, 2)}\n\n📝 Next: Create a booking with POST /bookings`);
+                } else {
+                    log(`❌ Booking Failed:\n${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}\n\nMake sure Booking Service is running on port 8001`);
+            }
+        }
+        
+        async function testUsers() {
+            if (!token) {
+                log('⚠️ Please login first to get a token!');
+                return;
+            }
+            
+            try {
+                log('🔄 Fetching users (admin only)...');
+                const response = await fetch('http://localhost:8002/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ User Management Service!\n\nUsers:\n${JSON.stringify(data.users, null, 2)}`);
+                } else {
+                    log(`❌ Request Failed:\n${JSON.stringify(data, null, 2)}\n\n(Note: This endpoint requires admin role)`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}\n\nMake sure User Management is running on port 8002`);
+            }
+        }
+        
+        async function testNotifications() {
+            if (!token) {
+                log('⚠️ Please login first to get a token!');
+                return;
+            }
+            
+            try {
+                log('🔄 Fetching notifications...');
+                const response = await fetch('http://localhost:8004/notifications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Notification Service!\n\nNotifications:\n${JSON.stringify(data.notifications, null, 2)}\n\n(${data.notifications.length} total)`);
+                } else {
+                    log(`❌ Request Failed:\n${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}\n\nMake sure Notification Service is running on port 8004`);
+            }
+        }
+        
+        // Check service health on load
+        window.addEventListener('load', () => {
+            log('👋 Welcome to CloudMLOPS!\n\n1. Click "Test Login" to authenticate\n2. Then test other services\n\nAll services use JWT authentication.');
+        });
+    </script>
+</body>
+</html>
