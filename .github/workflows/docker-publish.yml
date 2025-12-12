@@ -92,23 +92,11 @@ jobs:
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
         
-    - name: Create Dockerfile
-      run: |
-        cat > ./maintenance/Dockerfile.generated <<EOF
-        FROM python:3.11-slim
-        WORKDIR /app
-        COPY requirements_websocket.txt .
-        RUN pip install --no-cache-dir -r requirements_websocket.txt
-        COPY . .
-        EXPOSE 8080
-        CMD ["python", "websocket_api.py"]
-        EOF
-        
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: ./maintenance
-        file: ./maintenance/Dockerfile.generated
+        file: ./maintenance/Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
