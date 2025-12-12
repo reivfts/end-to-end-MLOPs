@@ -274,7 +274,7 @@
 
             <!-- My Bookings Section -->
             <div class="section">
-                <h2>My Bookings</h2>
+                <h2 id="bookingsTitle">My Bookings</h2>
                 <div id="bookingsList">
                     <div class="empty-state">Loading bookings...</div>
                 </div>
@@ -289,9 +289,15 @@
         let bookedSlots = [];
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user'));
+        const isFaculty = user && user.role === 'faculty';
 
         if (!token) {
             window.location.href = '/login.html';
+        }
+
+        // Update title for faculty
+        if (isFaculty) {
+            document.getElementById('bookingsTitle').textContent = 'All Bookings';
         }
 
         // Set minimum date to today
@@ -341,10 +347,19 @@
                 slots.forEach(slot => {
                     const slotDiv = document.createElement('div');
                     slotDiv.className = 'time-slot';
-                    slotDiv.textContent = slot;
-                    slotDiv.onclick = () => selectSlot(slot, slotDiv);
+                    // Handle both object format {index, time} and string format
+                    const slotTime = typeof slot === 'object' ? slot.time : slot;
+                    slotDiv.textContent = slotTime;
+                    slotDiv.onclick = () => selectSlot(slotTime, slotDiv);
                     timeSlotsDiv.appendChild(slotDiv);
                 });
+                
+                // Check availability immediately if room and date are selected
+                const roomId = document.getElementById('roomSelect').value;
+                const date = document.getElementById('dateSelect').value;
+                if (roomId && date) {
+                    checkAvailability();
+                }
             } catch (error) {
                 console.error('Error loading time slots:', error);
             }
@@ -446,7 +461,10 @@
 
         async function loadMyBookings() {
             try {
-                const response = await fetch('/api/booking/my-bookings', {
+                // Faculty see all bookings, students see only their own
+                const endpoint = isFaculty ? '/api/booking/bookings' : '/api/booking/my-bookings';
+                
+                const response = await fetch(endpoint, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -470,15 +488,20 @@
                     
                     const room = rooms.find(r => r.id === booking.room_id);
                     
+                    // Faculty can cancel any booking, students only their own
+                    const canCancel = isFaculty || booking.user_id === user.userId;
+                    
                     bookingItem.innerHTML = `
                         <div class="booking-info">
                             <h4>${room ? room.name : `Room ${booking.room_id}`}</h4>
                             <p>📅 ${booking.date} | ⏰ ${booking.time_slot}</p>
-                            <p>${booking.purpose}</p>
+                            ${isFaculty && booking.user_email ? `<p>👤 ${booking.user_email}</p>` : ''}
                         </div>
-                        <button class="cancel-btn" onclick="cancelBooking(${booking.id})">
-                            Cancel
-                        </button>
+                        ${canCancel ? `
+                            <button class="cancel-btn" onclick="cancelBooking(${booking.id})">
+                                Cancel
+                            </button>
+                        ` : ''}
                     `;
                     
                     bookingsList.appendChild(bookingItem);

@@ -394,16 +394,18 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        title,
-                        category,
-                        location,
-                        description
+                        description: `${title} - ${category} at ${location}: ${description}`,
+                        title: title,
+                        category: category,
+                        location: location,
+                        system: location,
+                        requester: user.email
                     })
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.success) {
                     showMessage('submitMessage', 'Ticket submitted successfully!', 'success');
                     document.getElementById('ticketForm').reset();
                     loadTickets();
@@ -468,17 +470,23 @@
                 const ticketDiv = document.createElement('div');
                 ticketDiv.className = 'ticket-item';
 
-                const priorityClass = `priority-${ticket.priority || 'medium'}`;
-                const statusClass = `status-${ticket.status}`;
-                const statusText = ticket.status.replace('_', ' ').toUpperCase();
+                const priorityClass = `priority-${(ticket.priority || 'MEDIUM').toLowerCase()}`;
+                const statusClass = `status-${ticket.status || 'open'}`;
+                const statusText = (ticket.status || 'open').replace('_', ' ').toUpperCase();
+                
+                // Extract info from the ticket structure
+                const description = ticket.request_details?.description || ticket.description || 'No description';
+                const title = ticket.title || ticket.request_details?.system || 'Maintenance Request';
+                const requester = ticket.request_details?.requester || ticket.requester || 'Unknown';
+                const timestamp = ticket.request_details?.timestamp || ticket.created_at || new Date().toISOString();
 
                 ticketDiv.innerHTML = `
                     <div class="ticket-header">
                         <div>
-                            <div class="ticket-title">${ticket.title}</div>
+                            <div class="ticket-title">${title}</div>
                             <div class="ticket-meta">
-                                ${isFaculty ? `Submitted by: ${ticket.user_email || 'Unknown'} | ` : ''}
-                                ${ticket.location} | ${ticket.category}
+                                ${isFaculty ? `Submitted by: ${requester} | ` : ''}
+                                Priority Score: ${ticket.priority_score || 'N/A'}
                             </div>
                         </div>
                         <div>
@@ -486,16 +494,16 @@
                             <span class="status-badge ${statusClass}">${statusText}</span>
                         </div>
                     </div>
-                    <div class="ticket-description">${ticket.description}</div>
+                    <div class="ticket-description">${description}</div>
                     <div class="ticket-meta">
-                        Created: ${new Date(ticket.created_at).toLocaleString()}
+                        Created: ${new Date(timestamp).toLocaleString()} | SLA: ${ticket.sla || 'Standard'}
                     </div>
                     ${isFaculty ? `
                         <div class="ticket-actions">
-                            <button class="action-btn update-btn" onclick="updateTicketStatus(${ticket.id})">
+                            <button class="action-btn update-btn" onclick="updateTicketStatus('${ticket.request_id}')">
                                 Update Status
                             </button>
-                            <button class="action-btn delete-btn" onclick="deleteTicket(${ticket.id})">
+                            <button class="action-btn delete-btn" onclick="deleteTicket('${ticket.request_id}')">
                                 Delete
                             </button>
                         </div>

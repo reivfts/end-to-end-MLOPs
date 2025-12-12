@@ -1,16 +1,92 @@
 """
-User Management Service
-Handles user authentication, registration, and profile management
+User Management Service with JWT Auth
+Simple CRUD for users and roles
+Port: 8002
 """
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS
+import jwt
+import sqlite3
+from functools import wraps
+from datetime import datetime
 import uuid
 
-# Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 
-# Simple in-memory user storage (use database in production)
-users = {}
+# JWT Configuration
+SECRET_KEY = 'your-secret-key-change-in-production'
+ALGORITHM = 'HS256'
+
+# Database setup
+def get_db():
+    conn = sqlite3.connect('users.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('admin', 'faculty', 'student')),
+            created_at TEXT NOT NULL
+        )
+    """)
+    
+    # Insert default users
+    conn.execute("SELECT COUNT(*) as c FROM users")
+    if conn.fetchone()['c'] == 0:
+        users_data = [
+            (str(uuid.uuid4()), 'admin@example.com', 'Admin User', 'admin'),
+            (str(uuid.uuid4()), 'faculty@example.com', 'Faculty User', 'faculty'),
+            (str(uuid.uuid4()), 'student@example.com', 'Student User', 'student'),
+        ]
+        conn.executemany(
+            "INSERT INTO users (id, email, name, role, created_at) VALUES (?, ?, ?, ?, ?)",
+            [(uid, email, name, role, datetime.utcnow().isoformat()) for uid, email, name, role in users_data]
+        )
+        conn.commit()
+    conn.close()
+
+init_db()
+
+# JWT Middleware
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            try:
+                token = auth_header.split(' ')[1]
+            except IndexError:
+                return jsonify({'error': 'Invalid token format'}), 401
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            request.user = payload
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not hasattr(request, 'user') or request.user.get('role') != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        return f(*args, **kwargs)
+    return decorated
 
 @app.route('/health', methods=['GET'])
 def health_check():

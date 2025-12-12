@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 import jwt
+import requests
 
 app = FastAPI(title="Booking Service")
 
@@ -18,16 +19,19 @@ app = FastAPI(title="Booking Service")
 SECRET_KEY = 'your-secret-key-change-in-production'
 ALGORITHM = 'HS256'
 
+# Service URLs
+NOTIFICATION_SERVICE = 'http://localhost:8004'
+
 # Time slots (8 slots from 6 AM to 10 PM, 2-hour blocks)
 TIME_SLOTS = [
-    "06:00-08:00",
-    "08:00-10:00", 
-    "10:00-12:00",
-    "12:00-14:00",
-    "14:00-16:00",
-    "16:00-18:00",
-    "18:00-20:00",
-    "20:00-22:00"
+    "6:00 AM - 8:00 AM",
+    "8:00 AM - 10:00 AM", 
+    "10:00 AM - 12:00 PM",
+    "12:00 PM - 2:00 PM",
+    "2:00 PM - 4:00 PM",
+    "4:00 PM - 6:00 PM",
+    "6:00 PM - 8:00 PM",
+    "8:00 PM - 10:00 PM"
 ]
 
 # Configure CORS
@@ -107,11 +111,30 @@ def verify_token(authorization: Optional[str] = Header(None)):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# Helper function to send notifications
+def send_notification(user_id: str, notification_type: str, message: str, token: str):
+    """Send notification to the notification service"""
+    try:
+        requests.post(
+            f'{NOTIFICATION_SERVICE}/notifications',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'user_id': user_id,
+                'type': notification_type,
+                'message': message
+            },
+            timeout=2
+        )
+    except Exception as e:
+        # Don't fail the main operation if notification fails
+        print(f"Failed to send notification: {e}")
+
 # Request Models
 class BookingRequest(BaseModel):
     room_id: int
     date: str  # YYYY-MM-DD
     time_slot: str
+    purpose: Optional[str] = "Meeting"
 
 # Endpoints
 @app.get("/health")
@@ -148,7 +171,7 @@ def list_time_slots(user: dict = Depends(verify_token)):
     }
 
 @app.post("/bookings")
-def create_booking(booking: BookingRequest, user: dict = Depends(verify_token)):
+def create_booking(booking: BookingRequest, user: dict = Depends(verify_token), authorization: str = Header(None)):
     """Create a new booking (all authenticated users)"""
     
     # Validate time slot
@@ -194,6 +217,16 @@ def create_booking(booking: BookingRequest, user: dict = Depends(verify_token)):
     booking_id = cur.lastrowid
     conn.close()
 
+    # Send notification
+    token = authorization.split(' ')[1] if authorization else None
+    if token:
+        send_notification(
+            user['userId'],
+            'booking_created',
+            f"Your booking for {room['name']} on {booking.date} at {booking.time_slot} was created successfully.",
+            token
+        )
+
     return {
         "message": "Booking created successfully",
         "booking_id": booking_id,
@@ -206,8 +239,8 @@ def create_booking(booking: BookingRequest, user: dict = Depends(verify_token)):
 def list_bookings(user: dict = Depends(verify_token)):
     """
     List bookings based on user role:
-    - Students: see only their own bookings
-    - Faculty/Admin: see all bookings
+    - Students: see only their own bookings with full details
+    - Faculty/Admin: see all bookings with full details
     """
     conn = get_db()
     
@@ -234,18 +267,21 @@ def list_bookings(user: dict = Depends(verify_token)):
     return {"bookings": [dict(booking) for booking in bookings]}
 
 @app.get("/bookings/{date}")
-def get_bookings_by_date(date: str, user: dict = Depends(verify_token)):
-    """Get all bookings for a specific date"""
+def get_bookings_by_date(date: str, room_id: Optional[int] = None, user: dict = Depends(verify_token)):
+    """Get all bookings for a specific date, optionally filtered by room
+    - Students: See which slots are taken but not who booked them
+    - Faculty: See all booking details including who booked
+    """
     conn = get_db()
     
-    if user['role'] == 'student':
+    if room_id:
         bookings = conn.execute("""
             SELECT b.*, r.name as room_name
             FROM bookings b
             JOIN rooms r ON b.room_id = r.id
-            WHERE b.date = ? AND b.user_id = ? AND b.status = 'active'
+            WHERE b.date = ? AND b.room_id = ? AND b.status = 'active'
             ORDER BY b.time_slot ASC
-        """, (date, user['userId'])).fetchall()
+        """, (date, room_id)).fetchall()
     else:
         bookings = conn.execute("""
             SELECT b.*, r.name as room_name
@@ -256,10 +292,25 @@ def get_bookings_by_date(date: str, user: dict = Depends(verify_token)):
         """, (date,)).fetchall()
     
     conn.close()
+    
+    # For students, hide user details
+    if user['role'] == 'student':
+        sanitized_bookings = []
+        for booking in bookings:
+            b_dict = dict(booking)
+            # Only show if it's their own booking or just mark as occupied
+            if b_dict['user_id'] != user['userId']:
+                # Hide user details for other people's bookings
+                b_dict['user_id'] = 'occupied'
+                b_dict['user_email'] = 'Occupied'
+            sanitized_bookings.append(b_dict)
+        return {"date": date, "bookings": sanitized_bookings}
+    
+    # Faculty see everything
     return {"date": date, "bookings": [dict(booking) for booking in bookings]}
 
 @app.delete("/bookings/{booking_id}")
-def cancel_booking(booking_id: int, user: dict = Depends(verify_token)):
+def cancel_booking(booking_id: int, user: dict = Depends(verify_token), authorization: str = Header(None)):
     """
     Cancel a booking:
     - Students: can only cancel their own bookings
@@ -268,9 +319,12 @@ def cancel_booking(booking_id: int, user: dict = Depends(verify_token)):
     conn = get_db()
     cur = conn.cursor()
 
-    # Get booking
+    # Get booking with room info
     booking = cur.execute("""
-        SELECT * FROM bookings WHERE id = ? AND status = 'active'
+        SELECT b.*, r.name as room_name
+        FROM bookings b
+        JOIN rooms r ON b.room_id = r.id
+        WHERE b.id = ? AND b.status = 'active'
     """, (booking_id,)).fetchone()
 
     if not booking:
@@ -292,6 +346,16 @@ def cancel_booking(booking_id: int, user: dict = Depends(verify_token)):
     
     conn.commit()
     conn.close()
+
+    # Send notification to the booking owner
+    token = authorization.split(' ')[1] if authorization else None
+    if token:
+        send_notification(
+            booking['user_id'],
+            'booking_deleted',
+            f"Your booking for {booking['room_name']} on {booking['date']} at {booking['time_slot']} was deleted.",
+            token
+        )
 
     return {
         "message": "Booking cancelled successfully",

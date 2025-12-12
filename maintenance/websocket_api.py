@@ -11,11 +11,31 @@ import json
 import os
 from datetime import datetime
 import uuid
+import jwt
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# JWT Configuration (must match gateway)
+SECRET_KEY = 'your-secret-key-change-in-production'
+ALGORITHM = 'HS256'
+
+# Helper function to verify JWT token
+def verify_token():
+    """Verify JWT token and return user info"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return None
+    
+    try:
+        token = auth_header.split(' ')[1]
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except:
+        return None
 
 # Helper function to broadcast to all connected clients
 def broadcast_event(event, data):
@@ -73,12 +93,33 @@ def health_check():
 
 @app.route('/tickets', methods=['GET'])
 def get_all_tickets():
-    """Get all tickets"""
-    ticket_list = sorted(
-        tickets.values(),
-        key=lambda x: x.get('priority_score', 0),
-        reverse=True
-    )
+    """Get all tickets - students see only their own, faculty see all"""
+    user = verify_token()
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    # Filter tickets based on role
+    if user['role'] in ['faculty', 'admin']:
+        # Faculty and admin see all tickets
+        ticket_list = sorted(
+            tickets.values(),
+            key=lambda x: x.get('priority_score', 0),
+            reverse=True
+        )
+    else:
+        # Students see only their own tickets
+        user_email = user.get('email', '')
+        ticket_list = [
+            ticket for ticket in tickets.values()
+            if ticket.get('request_details', {}).get('requester', '') == user_email
+        ]
+        ticket_list = sorted(
+            ticket_list,
+            key=lambda x: x.get('priority_score', 0),
+            reverse=True
+        )
+    
     return jsonify({
         'success': True,
         'count': len(ticket_list),
@@ -98,6 +139,101 @@ def get_ticket(ticket_id):
         'success': False,
         'error': 'Ticket not found'
     }), 404
+
+
+@app.route('/tickets/<ticket_id>', methods=['PUT'])
+def update_ticket(ticket_id):
+    """Update a ticket's status - faculty can update any, students only their own"""
+    user = verify_token()
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if ticket_id not in tickets:
+        return jsonify({
+            'success': False,
+            'error': 'Ticket not found'
+        }), 404
+    
+    # Check permissions
+    ticket = tickets[ticket_id]
+    if user['role'] == 'student':
+        # Students can only update their own tickets
+        if ticket.get('request_details', {}).get('requester', '') != user.get('email', ''):
+            return jsonify({
+                'success': False,
+                'error': 'You can only update your own tickets'
+            }), 403
+    
+    try:
+        data = request.get_json()
+        if not data or 'status' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing status field'
+            }), 400
+        
+        # Update the ticket status
+        tickets[ticket_id]['status'] = data['status']
+        tickets[ticket_id]['updated_at'] = datetime.utcnow().isoformat()
+        save_tickets()
+        
+        # Broadcast update to all connected clients
+        broadcast_event('ticket_updated', tickets[ticket_id])
+        
+        return jsonify({
+            'success': True,
+            'message': 'Ticket updated successfully',
+            'ticket': tickets[ticket_id]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/tickets/<ticket_id>', methods=['DELETE'])
+def delete_ticket(ticket_id):
+    """Delete a ticket - faculty can delete any, students only their own"""
+    user = verify_token()
+    
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if ticket_id not in tickets:
+        return jsonify({
+            'success': False,
+            'error': 'Ticket not found'
+        }), 404
+    
+    # Check permissions
+    ticket = tickets[ticket_id]
+    if user['role'] == 'student':
+        # Students can only delete their own tickets
+        if ticket.get('request_details', {}).get('requester', '') != user.get('email', ''):
+            return jsonify({
+                'success': False,
+                'error': 'You can only delete your own tickets'
+            }), 403
+    
+    try:
+        deleted_ticket = tickets.pop(ticket_id)
+        save_tickets()
+        
+        # Broadcast deletion to all connected clients
+        broadcast_event('ticket_deleted', {'ticket_id': ticket_id})
+        
+        return jsonify({
+            'success': True,
+            'message': 'Ticket deleted successfully',
+            'ticket': deleted_ticket
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @app.route('/analyze', methods=['POST'])
@@ -120,6 +256,11 @@ def analyze():
         result = analyze_maintenance_request(data)
         
         if result.get('success'):
+            # Add default status and timestamps
+            result['status'] = 'open'
+            result['created_at'] = datetime.utcnow().isoformat()
+            result['updated_at'] = datetime.utcnow().isoformat()
+            
             # Store ticket
             tickets[ticket_id] = result
             save_tickets()

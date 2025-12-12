@@ -197,7 +197,7 @@
 
         async function loadNotifications() {
             try {
-                const response = await fetch('/api/notifications/notifications', {
+                const response = await fetch('/api/notifications', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -263,7 +263,7 @@
                     </div>
                     <div class="notification-message">${notification.message}</div>
                     ${!notification.read ? `
-                        <button class="mark-read-btn" onclick="markAsRead(${notification.id})">
+                        <button class="mark-read-btn" onclick="markAsRead('${notification.id}')">
                             Mark as Read
                         </button>
                     ` : ''}
@@ -275,7 +275,7 @@
 
         async function markAsRead(notificationId) {
             try {
-                const response = await fetch(`/api/notifications/notifications/${notificationId}/read`, {
+                const response = await fetch(`/api/notifications/${notificationId}/read`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`

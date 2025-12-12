@@ -409,6 +409,15 @@ def booking_delete(booking_id):
     """Faculty/Student: Cancel booking"""
     return proxy_request(SERVICES['booking'], f'/bookings/{booking_id}', 'DELETE')
 
+@app.route('/api/booking/bookings/<string:date>', methods=['GET'])
+@token_required
+@role_required('faculty', 'student')
+def booking_by_date(date):
+    """Faculty/Student: Get bookings for a specific date"""
+    # Forward query parameters (like room_id)
+    query_string = '?' + request.query_string.decode() if request.query_string else ''
+    return proxy_request(SERVICES['booking'], f'/bookings/{date}{query_string}', 'GET')
+
 @app.route('/api/booking/my-bookings', methods=['GET'])
 @token_required
 @role_required('faculty', 'student')
@@ -472,11 +481,13 @@ def maintenance_info():
 def maintenance_tickets():
     """Faculty/Student: Get all tickets or create new ticket"""
     if request.method == 'GET':
+        # GET - Return all tickets
         return proxy_request(SERVICES['maintenance'], '/tickets', 'GET')
     else:  # POST
-        return proxy_request(SERVICES['maintenance'], '/tickets', 'POST', request.get_json())
+        # POST - Create ticket by analyzing the request
+        return proxy_request(SERVICES['maintenance'], '/analyze', 'POST', request.get_json())
 
-@app.route('/api/maintenance/tickets/<int:ticket_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/api/maintenance/tickets/<ticket_id>', methods=['GET', 'PUT', 'DELETE'])
 @token_required
 @role_required('faculty', 'student')
 def maintenance_ticket_detail(ticket_id):

@@ -370,7 +370,7 @@
 
         async function loadUsers() {
             try {
-                const response = await fetch('/api/users/users', {
+                const response = await fetch('/api/users', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -400,8 +400,8 @@
                         <td><span class="role-badge ${roleClass}">${user.role.toUpperCase()}</span></td>
                         <td>${createdDate}</td>
                         <td>
-                            <button class="action-btn edit-btn" onclick="editUser(${user.id})">Edit</button>
-                            <button class="action-btn delete-btn" onclick="deleteUser(${user.id})">Delete</button>
+                            <button class="action-btn edit-btn" onclick="editUser('${user.id}')">Edit</button>
+                            <button class="action-btn delete-btn" onclick="deleteUser('${user.id}')">Delete</button>
                         </td>
                     `;
 
@@ -425,7 +425,7 @@
 
         async function editUser(userId) {
             try {
-                const response = await fetch(`/api/users/users/${userId}`, {
+                const response = await fetch(`/api/users/${userId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -455,7 +455,7 @@
             }
 
             try {
-                const response = await fetch(`/api/users/users/${userId}`, {
+                const response = await fetch(`/api/users/${userId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -496,7 +496,7 @@
                 let response;
                 if (userId) {
                     // Update existing user
-                    response = await fetch(`/api/users/users/${userId}`, {
+                    response = await fetch(`/api/users/${userId}`, {
                         method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -506,7 +506,7 @@
                     });
                 } else {
                     // Create new user
-                    response = await fetch('/api/users/users', {
+                    response = await fetch('/api/users', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,

@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # Infrastructure
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: "-js"
+
+  # Services
+  entryway-hub:
+    build: ./services/entryway-hub
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-production-secret-change-me}
+      RBAC_SERVICE_URL: http://rbac-service:4001
+      BOOKING_SERVICE_URL: http://booking-service:4002
+      MAINTENANCE_SERVICE_URL: http://maintenance-service:8080
+      GPA_SERVICE_URL: http://gpa-service:4004
+      NOTIFICATION_SERVICE_URL: http://notification-service:4005
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      - redis
+      - nats
+
+  rbac-service:
+    build: ./services/rbac-service
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/rbac_db
+      JWT_SECRET: ${JWT_SECRET:-production-secret-change-me}
+      NATS_URL: nats://nats:4222
+    depends_on:
+      - postgres
+      - nats
+
+  booking-service:
+    build: ./services/booking-service
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/booking_db
+      NATS_URL: nats://nats:4222
+    depends_on:
+      - postgres
+      - nats
+
+  maintenance-service:
+    build: ./maintenance
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      FLASK_ENV: production
+    volumes:
+      - ./maintenance/tickets_storage.json:/app/tickets_storage.json
+    depends_on:
+      - nats
+
+  gpa-service:
+    build: ./services/gpa-calculator-service
+    ports:
+      - "4004:4004"
+    environment:
+      PORT: 4004
+
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: 4005
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/notification_db
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+      - nats
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:4000
+      REACT_APP_WS_URL: ws://localhost:4005
+    depends_on:
+      - entryway-hub
+
+volumes:
+  postgres_data:
+  redis_data:
