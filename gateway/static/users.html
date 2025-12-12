@@ -369,6 +369,9 @@
         let editingUserId = null;
 
         async function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Loading users...</td></tr>';
+            
             try {
                 const response = await fetch('/api/users', {
                     headers: {
@@ -376,10 +379,13 @@
                     }
                 });
 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
                 const users = data.users || [];
-
-                const tbody = document.getElementById('usersTableBody');
 
                 if (users.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found</td></tr>';
@@ -409,7 +415,8 @@
                 });
             } catch (error) {
                 console.error('Error loading users:', error);
-                showMessage('Error loading users', 'error');
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color: #dc3545;">Error: ${error.message}</td></tr>`;
+                showMessage(`Error loading users: ${error.message}`, 'error');
             }
         }
 
@@ -431,21 +438,27 @@
                     }
                 });
 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to load user');
+                }
+
                 const data = await response.json();
+                const userData = data.user || data;
 
                 editingUserId = userId;
                 document.getElementById('modalTitle').textContent = 'Edit User';
                 document.getElementById('userId').value = userId;
-                document.getElementById('userName').value = data.name || '';
-                document.getElementById('userEmail').value = data.email;
-                document.getElementById('userRole').value = data.role;
+                document.getElementById('userName').value = userData.name || '';
+                document.getElementById('userEmail').value = userData.email;
+                document.getElementById('userRole').value = userData.role;
                 document.getElementById('userPassword').value = '';
                 document.getElementById('userPassword').placeholder = 'Leave blank to keep current';
                 document.getElementById('userPassword').required = false;
                 document.getElementById('userModal').classList.add('show');
             } catch (error) {
                 console.error('Error loading user:', error);
-                showMessage('Error loading user details', 'error');
+                showMessage(`Error loading user details: ${error.message}`, 'error');
             }
         }
 

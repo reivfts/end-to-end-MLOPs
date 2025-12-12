@@ -438,9 +438,9 @@ def gpa_calculate():
 
 @app.route('/api/notifications', methods=['GET', 'POST'])
 @token_required
-@role_required('faculty', 'student')
+@role_required('admin', 'faculty', 'student')
 def notifications_list():
-    """Faculty/Student: List or create notifications"""
+    """Admin/Faculty/Student: List or create notifications"""
     if request.method == 'GET':
         return proxy_request(SERVICES['notifications'], '/notifications', 'GET')
     else:
@@ -448,16 +448,16 @@ def notifications_list():
 
 @app.route('/api/notifications/<notif_id>/read', methods=['PUT'])
 @token_required
-@role_required('faculty', 'student')
+@role_required('admin', 'faculty', 'student')
 def notifications_read(notif_id):
-    """Faculty/Student: Mark notification as read"""
+    """Admin/Faculty/Student: Mark notification as read"""
     return proxy_request(SERVICES['notifications'], f'/notifications/{notif_id}/read', 'PUT')
 
 @app.route('/api/notifications/unread', methods=['GET'])
 @token_required
-@role_required('faculty', 'student')
+@role_required('admin', 'faculty', 'student')
 def notifications_unread():
-    """Faculty/Student: Get unread count"""
+    """Admin/Faculty/Student: Get unread count"""
     return proxy_request(SERVICES['notifications'], '/notifications/unread', 'GET')
 
 # Maintenance Service (Port 8080) - WebSocket handled separately
@@ -545,4 +545,4 @@ if __name__ == '__main__':
     print("   Faculty/Student → Booking, GPA, Notifications, Maintenance")
     print("")
     print("🌐 Frontend available at: http://localhost:5001")
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=False)

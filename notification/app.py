@@ -11,6 +11,7 @@ import sqlite3
 from functools import wraps
 from datetime import datetime
 import uuid
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -163,6 +164,65 @@ def get_unread_count():
     conn.close()
     
     return jsonify({'unreadCount': result['count']}), 200
+
+@app.route('/notifications/admin', methods=['POST'])
+@token_required
+def notify_admins():
+    """Create notifications for all admin users"""
+    try:
+        data = request.get_json()
+        
+        if not data or not all(k in data for k in ['type', 'message', 'actor_name', 'actor_id']):
+            return jsonify({'error': 'Missing required fields: type, message, actor_name, actor_id'}), 400
+        
+        # Get user-management service to fetch admin users
+        USER_MGMT_URL = 'http://localhost:8002'
+        try:
+            # Get all users to filter admins - use short timeout
+            auth_header = request.headers.get('Authorization')
+            headers = {'Authorization': auth_header} if auth_header else {}
+            response = requests.get(f"{USER_MGMT_URL}/users", headers=headers, timeout=1)
+            
+            if response.status_code == 200:
+                users = response.json().get('users', [])
+                admin_ids = [user['id'] for user in users if user.get('role') == 'admin']
+            else:
+                # Fallback to known admin IDs
+                admin_ids = ['admin-001']
+        except:
+            # Fallback to known admin IDs if service is unavailable
+            admin_ids = ['admin-001']
+        
+        conn = get_db()
+        timestamp = datetime.utcnow().isoformat()
+        notification_ids = []
+        
+        # Format message with timestamp and actor info
+        formatted_message = f"[{timestamp}] {data['actor_name']} (ID: {data['actor_id'][:8]}...): {data['message']}"
+        
+        # Create notification for each admin
+        for admin_id in admin_ids:
+            # Don't notify the actor if they're an admin
+            if admin_id == data['actor_id']:
+                continue
+                
+            notif_id = str(uuid.uuid4())
+            conn.execute("""
+                INSERT INTO notifications (id, user_id, type, message, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (notif_id, admin_id, data['type'], formatted_message, timestamp))
+            notification_ids.append(notif_id)
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': f'Notified {len(notification_ids)} admin(s)',
+            'notificationIds': notification_ids
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🔔 Notification Service starting on port 8004...")

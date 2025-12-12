@@ -13,6 +13,7 @@ from datetime import datetime
 import uuid
 import jwt
 from functools import wraps
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
@@ -22,6 +23,9 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # JWT Configuration (must match gateway)
 SECRET_KEY = 'your-secret-key-change-in-production'
 ALGORITHM = 'HS256'
+
+# Service URLs
+NOTIFICATION_SERVICE = 'http://localhost:8004'
 
 # Helper function to verify JWT token
 def verify_token():
@@ -36,6 +40,43 @@ def verify_token():
         return payload
     except:
         return None
+
+# Helper function to send notifications
+def send_notification(user_id: str, notification_type: str, message: str, token: str):
+    """Send notification to the notification service"""
+    try:
+        requests.post(
+            f'{NOTIFICATION_SERVICE}/notifications',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'user_id': user_id,
+                'type': notification_type,
+                'message': message
+            },
+            timeout=2
+        )
+    except Exception as e:
+        # Don't fail the main operation if notification fails
+        print(f"Failed to send notification: {e}")
+
+def notify_admins(action_type: str, message: str, actor_name: str, actor_id: str, token: str):
+    """Send notification to all admin users - non-blocking"""
+    try:
+        # Use very short timeout and don't wait for response
+        requests.post(
+            f'{NOTIFICATION_SERVICE}/notifications/admin',
+            headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+            json={
+                'type': action_type,
+                'message': message,
+                'actor_name': actor_name,
+                'actor_id': actor_id
+            },
+            timeout=0.5
+        )
+    except Exception:
+        # Silently fail - notifications are not critical
+        pass
 
 # Helper function to broadcast to all connected clients
 def broadcast_event(event, data):
@@ -174,12 +215,28 @@ def update_ticket(ticket_id):
             }), 400
         
         # Update the ticket status
+        old_status = tickets[ticket_id]['status']
         tickets[ticket_id]['status'] = data['status']
         tickets[ticket_id]['updated_at'] = datetime.utcnow().isoformat()
         save_tickets()
         
         # Broadcast update to all connected clients
         broadcast_event('ticket_updated', tickets[ticket_id])
+        
+        # Notify admins about the update
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            token = auth_header.split(' ')[1]
+            ticket_desc = ticket.get('request_details', {}).get('description', 'maintenance ticket')
+            short_desc = ticket_desc[:30] + '...' if len(ticket_desc) > 30 else ticket_desc
+            
+            notify_admins(
+                'maintenance_updated',
+                f"{user.get('name', 'User')} updated ticket status from '{old_status}' to '{data['status']}' for: {short_desc}",
+                user.get('name', 'Unknown'),
+                user['userId'],
+                token
+            )
         
         return jsonify({
             'success': True,
@@ -224,6 +281,40 @@ def delete_ticket(ticket_id):
         # Broadcast deletion to all connected clients
         broadcast_event('ticket_deleted', {'ticket_id': ticket_id})
         
+        # Send notification to the ticket owner
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            token = auth_header.split(' ')[1]
+            ticket_description = deleted_ticket.get('request_details', {}).get('description', 'maintenance request')
+            # Extract first 50 chars of description for notification
+            short_desc = ticket_description[:50] + '...' if len(ticket_description) > 50 else ticket_description
+            
+            send_notification(
+                user['userId'],
+                'maintenance_deleted',
+                f"Your maintenance ticket was deleted: {short_desc}",
+                token
+            )
+            
+            # Notify admins about the deletion
+            requester = deleted_ticket.get('request_details', {}).get('requester', 'Unknown')
+            if user['userId'] == deleted_ticket.get('user_id', ''):
+                notify_admins(
+                    'maintenance_deleted',
+                    f"{user.get('name', 'User')} deleted their own maintenance ticket: {short_desc}",
+                    user.get('name', 'Unknown'),
+                    user['userId'],
+                    token
+                )
+            else:
+                notify_admins(
+                    'maintenance_deleted',
+                    f"{user.get('name', 'User')} deleted {requester}'s maintenance ticket: {short_desc}",
+                    user.get('name', 'Unknown'),
+                    user['userId'],
+                    token
+                )
+        
         return jsonify({
             'success': True,
             'message': 'Ticket deleted successfully',
@@ -267,6 +358,24 @@ def analyze():
             
             # Broadcast to all connected clients
             broadcast_event('new_ticket', result)
+            
+            # Notify admins about new ticket
+            user = verify_token()
+            if user:
+                auth_header = request.headers.get('Authorization')
+                if auth_header:
+                    token = auth_header.split(' ')[1]
+                    ticket_desc = data.get('description', 'maintenance request')
+                    short_desc = ticket_desc[:30] + '...' if len(ticket_desc) > 30 else ticket_desc
+                    priority = result.get('priority_score', 0)
+                    
+                    notify_admins(
+                        'maintenance_created',
+                        f"{user.get('name', 'User')} created a new maintenance ticket (Priority: {priority:.1f}): {short_desc}",
+                        user.get('name', 'Unknown'),
+                        user['userId'],
+                        token
+                    )
         
         return jsonify(result), 200 if result.get('success') else 400
         
@@ -316,6 +425,17 @@ def handle_submit_ticket(data):
             
             # Broadcast to all clients
             broadcast_event('new_ticket', result)
+            
+            # Notify admins about new ticket (WebSocket submission)
+            # Note: WebSocket connections don't have auth headers easily accessible
+            # So we'll include basic info from the data
+            requester = data.get('requester', 'Unknown')
+            ticket_desc = data.get('description', 'maintenance request')
+            short_desc = ticket_desc[:30] + '...' if len(ticket_desc) > 30 else ticket_desc
+            priority = result.get('priority_score', 0)
+            
+            # We can't easily get token from WebSocket, so log for now
+            print(f"New ticket created via WebSocket by {requester}: {short_desc} (Priority: {priority:.1f})")
             
             # Confirm to sender
             emit('ticket_submitted', result)

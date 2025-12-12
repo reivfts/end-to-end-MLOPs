@@ -88,12 +88,15 @@ def calculate_gpa():
         total_weighted = 0
         total_weight = 0
         
-        for cls in classes:
+        for i, cls in enumerate(classes):
             if 'gpa' not in cls or 'weight' not in cls:
                 return jsonify({'error': 'Each class must have gpa and weight'}), 400
             
-            gpa = float(cls['gpa'])
-            weight = float(cls['weight'])
+            try:
+                gpa = float(cls['gpa'])
+                weight = float(cls['weight'])
+            except (ValueError, TypeError):
+                return jsonify({'error': f'Error: Improper format. Class {i+1} has non-numeric values. GPA and weight must be numbers.'}), 400
             
             # Validate GPA range
             if gpa < 0.0 or gpa > 4.0:
@@ -119,7 +122,7 @@ def calculate_gpa():
         }), 200
         
     except ValueError as e:
-        return jsonify({'error': f'Invalid numeric value: {str(e)}'}), 400
+        return jsonify({'error': 'Error: Improper format. Please ensure all GPA and weight values are numbers.'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -18,6 +18,7 @@ CORS(app)
 
 # Gateway service URL for creating login credentials
 GATEWAY_URL = 'http://localhost:5001'
+NOTIFICATION_SERVICE = 'http://localhost:8004'
 
 # JWT Configuration
 SECRET_KEY = 'your-secret-key-change-in-production'
@@ -92,6 +93,23 @@ def admin_required(f):
             return jsonify({'error': 'Admin access required'}), 403
         return f(*args, **kwargs)
     return decorated
+
+def notify_admins(action_type, message, actor_name, actor_id, token):
+    """Send notification to all admin users - non-blocking"""
+    try:
+        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+        payload = {
+            'type': action_type,
+            'message': message,
+            'actor_name': actor_name,
+            'actor_id': actor_id
+        }
+        # Very short timeout, don't block the main operation
+        requests.post(f"{NOTIFICATION_SERVICE}/notifications/admin", 
+                     json=payload, headers=headers, timeout=0.5)
+    except Exception:
+        # Silently fail - notifications are not critical
+        pass
 
 # Endpoints
 @app.route('/health', methods=['GET'])
@@ -200,6 +218,18 @@ def create_user():
             
             return jsonify({'error': f'Failed to connect to authentication service: {str(e)}'}), 500
         
+        # Notify admins
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            token = auth_header.split(' ')[1]
+            notify_admins(
+                'user_created',
+                f"Created new {data['role']} user: {data['name']} ({data['email']})",
+                request.user.get('name', 'Unknown'),
+                request.user['userId'],
+                token
+            )
+        
         return jsonify({'message': 'User created successfully with login credentials', 'userId': user_id}), 201
         
     except Exception as e:
@@ -286,6 +316,30 @@ def update_user(user_id):
                 print(f"Warning: Failed to sync role change with gateway: {str(e)}")
                 # Don't fail the request if gateway sync fails
         
+        # Notify admins about the update
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            token = auth_header.split(' ')[1]
+            conn = get_db()
+            updated_user = conn.execute("SELECT name, email, role FROM users WHERE id = ?", (user_id,)).fetchone()
+            conn.close()
+            
+            if updated_user:
+                change_desc = []
+                if 'name' in data:
+                    change_desc.append(f"name to '{data['name']}'")
+                if 'role' in data:
+                    change_desc.append(f"role to '{data['role']}'")
+                
+                changes = " and ".join(change_desc)
+                notify_admins(
+                    'user_updated',
+                    f"Updated user {updated_user['name']} ({updated_user['email']}): changed {changes}",
+                    request.user.get('name', 'Unknown'),
+                    request.user['userId'],
+                    token
+                )
+        
         return jsonify({'message': 'User updated successfully'}), 200
         
     except Exception as e:
@@ -348,6 +402,18 @@ def delete_user(user_id):
     except Exception as e:
         print(f"Warning: Failed to sync user deletion with gateway: {str(e)}")
         # Don't fail the request if gateway sync fails
+    
+    # Notify admins about deletion
+    auth_header = request.headers.get('Authorization')
+    if auth_header:
+        token = auth_header.split(' ')[1]
+        notify_admins(
+            'user_deleted',
+            f"Deleted user: {user_email}",
+            request.user.get('name', 'Unknown'),
+            request.user['userId'],
+            token
+        )
     
     return jsonify({'message': 'User deleted successfully'}), 200
 

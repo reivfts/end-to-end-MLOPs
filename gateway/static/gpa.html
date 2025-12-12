@@ -328,22 +328,35 @@
             classRows.forEach(row => {
                 const id = row.id.split('-')[1];
                 const name = document.getElementById(`name-${id}`).value;
-                const gpa = parseFloat(document.getElementById(`gpa-${id}`).value);
-                const weight = parseInt(document.getElementById(`weight-${id}`).value);
+                const gpaInput = document.getElementById(`gpa-${id}`).value;
+                const weightInput = document.getElementById(`weight-${id}`).value;
                 
-                if (!name || isNaN(gpa) || isNaN(weight)) {
+                // Check if inputs are empty
+                if (!name || !gpaInput || !weightInput) {
+                    showMessage('Error: Please fill in all fields for each class');
+                    hasError = true;
+                    return;
+                }
+                
+                // Try to parse as numbers
+                const gpa = parseFloat(gpaInput);
+                const weight = parseInt(weightInput);
+                
+                // Check if conversion to numbers was successful
+                if (isNaN(gpa) || isNaN(weight)) {
+                    showMessage('Error: Expected numerical value for GPA and weight fields');
                     hasError = true;
                     return;
                 }
                 
                 if (gpa < 0 || gpa > 4) {
-                    showMessage('GPA must be between 0.0 and 4.0');
+                    showMessage('Error: GPA must be between 0.0 and 4.0');
                     hasError = true;
                     return;
                 }
                 
                 if (weight < 1 || weight > 3) {
-                    showMessage('Weight must be between 1 and 3');
+                    showMessage('Error: Weight must be between 1 and 3');
                     hasError = true;
                     return;
                 }

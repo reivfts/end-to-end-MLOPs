@@ -129,6 +129,25 @@ def send_notification(user_id: str, notification_type: str, message: str, token:
         # Don't fail the main operation if notification fails
         print(f"Failed to send notification: {e}")
 
+def notify_admins(action_type: str, message: str, actor_name: str, actor_id: str, token: str):
+    """Send notification to all admin users - non-blocking"""
+    try:
+        # Use very short timeout and don't wait for response
+        requests.post(
+            f'{NOTIFICATION_SERVICE}/notifications/admin',
+            headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+            json={
+                'type': action_type,
+                'message': message,
+                'actor_name': actor_name,
+                'actor_id': actor_id
+            },
+            timeout=0.5
+        )
+    except Exception:
+        # Silently fail - notifications are not critical
+        pass
+
 # Request Models
 class BookingRequest(BaseModel):
     room_id: int
@@ -224,6 +243,15 @@ def create_booking(booking: BookingRequest, user: dict = Depends(verify_token), 
             user['userId'],
             'booking_created',
             f"Your booking for {room['name']} on {booking.date} at {booking.time_slot} was created successfully.",
+            token
+        )
+        
+        # Notify admins
+        notify_admins(
+            'booking_created',
+            f"{user.get('name', 'User')} created a booking for {room['name']} on {booking.date} at {booking.time_slot}",
+            user.get('name', 'Unknown'),
+            user['userId'],
             token
         )
 
@@ -356,6 +384,28 @@ def cancel_booking(booking_id: int, user: dict = Depends(verify_token), authoriz
             f"Your booking for {booking['room_name']} on {booking['date']} at {booking['time_slot']} was deleted.",
             token
         )
+        
+        # Notify admins about the cancellation
+        actor_name = user.get('name', 'Unknown')
+        affected_user_id = booking['user_id']
+        
+        # Determine who affected
+        if user['userId'] == affected_user_id:
+            notify_admins(
+                'booking_deleted',
+                f"{actor_name} deleted their own booking for {booking['room_name']} on {booking['date']} at {booking['time_slot']}",
+                actor_name,
+                user['userId'],
+                token
+            )
+        else:
+            notify_admins(
+                'booking_deleted',
+                f"{actor_name} deleted {booking['user_name'] if 'user_name' in booking.keys() else 'a user'}'s booking for {booking['room_name']} on {booking['date']} at {booking['time_slot']}",
+                actor_name,
+                user['userId'],
+                token
+            )
 
     return {
         "message": "Booking cancelled successfully",
