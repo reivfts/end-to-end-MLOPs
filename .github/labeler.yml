@@ -1,0 +1,34 @@
+booking:
+  - booking/**/*
+
+maintenance:
+  - maintenance/**/*
+
+user-management:
+  - user-management/**/*
+
+gateway:
+  - gateway/**/*
+
+notification:
+  - notification/**/*
+
+gpa-calculator:
+  - gpa-calculator/**/*
+
+docker:
+  - docker-compose.yml
+  - '**/Dockerfile'
+  - '**/.dockerignore'
+
+documentation:
+  - '**/*.md'
+  - docs/**/*
+
+ci/cd:
+  - .github/workflows/**/*
+  - .github/**/*
+
+dependencies:
+  - '**/requirements*.txt'
+  - '**/package.json'
