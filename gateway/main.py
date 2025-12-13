@@ -10,6 +10,7 @@ Role-Based Access:
 
 from flask import Flask, jsonify, request, Response, send_from_directory
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import sqlite3
 from datetime import datetime, timedelta
@@ -26,13 +27,13 @@ SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
-# Service URLs
+# Service URLs - Fixed to match actual running services
 SERVICES = {
-    'users': 'http://localhost:8002',
-    'booking': 'http://localhost:8001',
-    'gpa': 'http://localhost:8003',
-    'notifications': 'http://localhost:8004',
-    'maintenance': 'http://localhost:8080'
+    'users': 'http://localhost:8002',        # Will fix user-management service next
+    'booking': 'http://localhost:8000',      # Python booking service runs on 8000, not 8001
+    'gpa': 'http://localhost:8003',          # TODO: Service doesn't exist yet
+    'notifications': 'http://localhost:8004', # TODO: Service doesn't exist yet
+    'maintenance': 'http://localhost:8080'   # ✅ Working
 }
 
 # Database setup
@@ -86,7 +87,11 @@ def create_access_token(user_data):
         'exp': datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         'iat': datetime.utcnow()
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    # Ensure token is a string (newer PyJWT versions return string, older return bytes)
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+    return token
 
 def verify_token(token):
     """Verify and decode JWT token"""
@@ -304,6 +309,114 @@ def delete_user(user_id):
     conn.close()
     return jsonify({'message': 'User deleted successfully'}), 200
 
+@app.route('/users', methods=['POST'])
+@token_required
+@role_required('admin')
+def create_user():
+    """Create new user (admin only)"""
+    data = request.get_json()
+    
+    if not data or not all(k in data for k in ('email', 'name', 'password', 'role')):
+        return jsonify({'error': 'Missing required fields: email, name, password, role'}), 400
+    
+    if data['role'] not in ['student', 'faculty', 'admin']:
+        return jsonify({'error': 'Invalid role. Must be: student, faculty, or admin'}), 400
+    
+    conn = get_db()
+    
+    # Check if user already exists
+    existing = conn.execute('SELECT id FROM users WHERE email = ?', (data['email'],)).fetchone()
+    if existing:
+        conn.close()
+        return jsonify({'error': 'User with this email already exists'}), 409
+    
+    try:
+        hashed_password = generate_password_hash(data['password'])
+        user_id = str(uuid.uuid4())
+        
+        conn.execute("""
+            INSERT INTO users (id, email, name, password, role, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (user_id, data['email'], data['name'], hashed_password, data['role'], datetime.utcnow()))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': 'User created successfully',
+            'userId': user_id
+        }), 201
+        
+    except Exception as e:
+        conn.close()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/users/<user_id>', methods=['PUT'])
+@token_required
+@role_required('admin')
+def update_user(user_id):
+    """Update user (admin only)"""
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    conn = get_db()
+    
+    # Check if user exists
+    user = conn.execute('SELECT id FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({'error': 'User not found'}), 404
+    
+    # Build update query dynamically
+    update_fields = []
+    update_values = []
+    
+    if 'email' in data:
+        # Check if email is already taken by another user
+        existing = conn.execute('SELECT id FROM users WHERE email = ? AND id != ?', 
+                               (data['email'], user_id)).fetchone()
+        if existing:
+            conn.close()
+            return jsonify({'error': 'Email already taken by another user'}), 409
+        update_fields.append('email = ?')
+        update_values.append(data['email'])
+    
+    if 'name' in data:
+        update_fields.append('name = ?')
+        update_values.append(data['name'])
+    
+    if 'role' in data:
+        if data['role'] not in ['student', 'faculty', 'admin']:
+            conn.close()
+            return jsonify({'error': 'Invalid role. Must be: student, faculty, or admin'}), 400
+        update_fields.append('role = ?')
+        update_values.append(data['role'])
+    
+    if 'password' in data and data['password']:
+        hashed_password = generate_password_hash(data['password'])
+        update_fields.append('password = ?')
+        update_values.append(hashed_password)
+    
+    if not update_fields:
+        conn.close()
+        return jsonify({'error': 'No valid fields to update'}), 400
+    
+    try:
+        update_values.append(user_id)  # Add user_id for WHERE clause
+        query = f"UPDATE users SET {', '.join(update_fields)} WHERE id = ?"
+        
+        conn.execute(query, update_values)
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'User updated successfully'}), 200
+        
+    except Exception as e:
+        conn.close()
+        return jsonify({'error': str(e)}), 500
+
 # Service Info
 @app.route('/', methods=['GET'])
 def home():
@@ -348,32 +461,59 @@ def proxy_request(service_url, path, method='GET', data=None):
         return jsonify({'error': str(e)}), 500
 
 # ==================== ADMIN-ONLY ROUTES ====================
-# User Management Service (Port 8002) - Admin Only
+# User Management - Admin Only (Local Database)
 
 @app.route('/api/users', methods=['GET', 'POST'])
 @token_required
 @role_required('admin')
-def users_list():
+def api_users_list():
     """Admin only: List or create users"""
     if request.method == 'GET':
-        return proxy_request(SERVICES['users'], '/users', 'GET')
+        # Get all users
+        conn = get_db()
+        users = conn.execute("""
+            SELECT id, email, name, role, created_at 
+            FROM users 
+            ORDER BY created_at DESC
+        """).fetchall()
+        conn.close()
+        
+        return jsonify({
+            'users': [dict(user) for user in users]
+        }), 200
     else:
-        return proxy_request(SERVICES['users'], '/users', 'POST', request.get_json())
+        # Create new user
+        return create_user()
 
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
 @token_required
 @role_required('admin')
-def users_detail(user_id):
+def api_users_detail(user_id):
     """Admin only: Get, update, or delete user"""
-    data = request.get_json() if request.method in ['PUT', 'POST'] else None
-    return proxy_request(SERVICES['users'], f'/users/{user_id}', request.method, data)
+    if request.method == 'GET':
+        return get_user(user_id)
+    elif request.method == 'PUT':
+        return update_user(user_id)
+    else:  # DELETE
+        return delete_user(user_id)
 
 @app.route('/api/users/by-role/<role>', methods=['GET'])
 @token_required
 @role_required('admin')
-def users_by_role(role):
+def api_users_by_role(role):
     """Admin only: Get users by role"""
-    return proxy_request(SERVICES['users'], f'/users/by-role/{role}', 'GET')
+    conn = get_db()
+    users = conn.execute("""
+        SELECT id, email, name, role, created_at 
+        FROM users 
+        WHERE role = ?
+        ORDER BY created_at DESC
+    """, (role,)).fetchall()
+    conn.close()
+    
+    return jsonify({
+        'users': [dict(user) for user in users]
+    }), 200
 
 # ==================== FACULTY/STUDENT ROUTES ====================
 # Booking Service (Port 8001)
