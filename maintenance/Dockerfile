@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements*.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir flask flask-cors flask-socketio python-socketio nltk scikit-learn eventlet
+RUN pip install --no-cache-dir flask flask-cors flask-socketio python-socketio nltk scikit-learn eventlet requests
 
 # Download NLTK data
 RUN python -m nltk.downloader punkt averaged_perceptron_tagger wordnet stopwords -d /usr/local/share/nltk_data
