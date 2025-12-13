@@ -125,7 +125,7 @@ jobs:
           tags: mlops/maintenance:latest
       
       - name: Validate Docker Compose
-        run: docker-compose config
+        run: docker compose config
 
   security:
     runs-on: ubuntu-latest
@@ -158,21 +158,21 @@ jobs:
         uses: docker/setup-buildx-action@v2
       
       - name: Start Docker Compose services
-        run: docker-compose up -d
+        run: docker compose up -d
         timeout-minutes: 5
       
       - name: Wait for services to be healthy
         run: |
           echo "Waiting for PostgreSQL..."
           for i in {1..30}; do
-            docker-compose exec -T postgres pg_isready -U postgres && break
+            docker compose exec -T postgres pg_isready -U postgres && break
             echo "Attempt $i failed, retrying..."
             sleep 2
           done
           
           echo "Waiting for Redis..."
           for i in {1..30}; do
-            docker-compose exec -T redis redis-cli ping && break
+            docker compose exec -T redis redis-cli ping && break
             echo "Attempt $i failed, retrying..."
             sleep 2
           done
@@ -181,7 +181,7 @@ jobs:
           sleep 5
       
       - name: Check service logs
-        run: docker-compose logs
+        run: docker compose logs
         if: always()
       
       - name: Test Gateway health
@@ -214,5 +214,5 @@ jobs:
         continue-on-error: true
       
       - name: Cleanup
-        run: docker-compose down -v
+        run: docker compose down -v
         if: always()
