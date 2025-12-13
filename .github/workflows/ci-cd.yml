@@ -126,7 +126,6 @@ jobs:
       
       - name: Validate Docker Compose
         run: docker-compose config
-        continue-on-error: true
 
   security:
     runs-on: ubuntu-latest
