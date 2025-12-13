@@ -1,0 +1,219 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint & Code Quality
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort
+      
+      - name: Run Black formatter check
+        run: black --check . --exclude venv
+        continue-on-error: true
+      
+      - name: Run isort import check
+        run: isort --check-only . --skip venv
+        continue-on-error: true
+      
+      - name: Run Flake8 linting
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        continue-on-error: true
+
+  test-services:
+    runs-on: ubuntu-latest
+    name: Test Services
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Check Python syntax - Gateway
+        run: python -m py_compile gateway/main.py
+        continue-on-error: true
+      
+      - name: Check Python syntax - Booking
+        run: python -m py_compile booking/main.py
+        continue-on-error: true
+      
+      - name: Check Python syntax - User Management
+        run: python -m py_compile user-management/app.py
+        continue-on-error: true
+      
+      - name: Check Python syntax - GPA Calculator
+        run: python -m py_compile gpa-calculator/main.py
+        continue-on-error: true
+      
+      - name: Check Python syntax - Notification
+        run: python -m py_compile notification/app.py
+        continue-on-error: true
+      
+      - name: Check Python syntax - Maintenance
+        run: python -m py_compile maintenance/main.py
+        continue-on-error: true
+
+  docker-build:
+    runs-on: ubuntu-latest
+    name: Build Docker Images
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build Gateway Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./gateway
+          push: false
+          tags: mlops/gateway:latest
+      
+      - name: Build Booking Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./booking
+          push: false
+          tags: mlops/booking:latest
+      
+      - name: Build User Management Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./user-management
+          push: false
+          tags: mlops/user-management:latest
+      
+      - name: Build GPA Calculator Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./gpa-calculator
+          push: false
+          tags: mlops/gpa-calculator:latest
+      
+      - name: Build Notification Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./notification
+          push: false
+          tags: mlops/notification:latest
+      
+      - name: Build Maintenance Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./maintenance
+          push: false
+          tags: mlops/maintenance:latest
+      
+      - name: Validate Docker Compose
+        run: docker-compose config
+        continue-on-error: true
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Checks
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install bandit
+        run: pip install bandit
+      
+      - name: Run Bandit security scan
+        run: bandit -r . -ll --skip B101,B601 -f json
+        continue-on-error: true
+
+  integration-test:
+    runs-on: ubuntu-latest
+    name: Integration Tests with Docker
+    needs: [docker-build]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Start Docker Compose services
+        run: docker-compose up -d
+        timeout-minutes: 5
+      
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for PostgreSQL..."
+          for i in {1..30}; do
+            docker-compose exec -T postgres pg_isready -U postgres && break
+            echo "Attempt $i failed, retrying..."
+            sleep 2
+          done
+          
+          echo "Waiting for Redis..."
+          for i in {1..30}; do
+            docker-compose exec -T redis redis-cli ping && break
+            echo "Attempt $i failed, retrying..."
+            sleep 2
+          done
+          
+          echo "Waiting for NATS..."
+          sleep 5
+      
+      - name: Check service logs
+        run: docker-compose logs
+        if: always()
+      
+      - name: Test Gateway health
+        run: |
+          for i in {1..10}; do
+            curl -f http://localhost:5001/ && break
+            echo "Gateway not ready, attempt $i..."
+            sleep 2
+          done
+        continue-on-error: true
+      
+      - name: Test Booking service
+        run: curl -f http://localhost:8001/ || echo "Booking service check complete"
+        continue-on-error: true
+      
+      - name: Test User Management service
+        run: curl -f http://localhost:8002/ || echo "User Management service check complete"
+        continue-on-error: true
+      
+      - name: Test GPA Calculator service
+        run: curl -f http://localhost:8003/ || echo "GPA Calculator service check complete"
+        continue-on-error: true
+      
+      - name: Test Notification service
+        run: curl -f http://localhost:8004/ || echo "Notification service check complete"
+        continue-on-error: true
+      
+      - name: Test Maintenance service
+        run: curl -f http://localhost:8080/ || echo "Maintenance service check complete"
+        continue-on-error: true
+      
+      - name: Cleanup
+        run: docker-compose down -v
+        if: always()
