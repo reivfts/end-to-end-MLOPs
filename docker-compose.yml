@@ -20,8 +20,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -36,11 +36,6 @@ services:
       - "4222:4222"
       - "8222:8222"
     command: "-js"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8222"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Microservices
   gateway:
@@ -57,7 +52,7 @@ services:
       redis:
         condition: service_healthy
       nats:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   user-management:
@@ -74,7 +69,7 @@ services:
       postgres:
         condition: service_healthy
       nats:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   booking:
@@ -91,7 +86,7 @@ services:
       postgres:
         condition: service_healthy
       nats:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   gpa-calculator:
@@ -121,7 +116,7 @@ services:
       postgres:
         condition: service_healthy
       nats:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   maintenance:
@@ -134,7 +129,7 @@ services:
       FLASK_DEBUG: 0
     depends_on:
       nats:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
 volumes:
