@@ -1,7 +1,7 @@
--- Create databases (executed directly, not in a function)
-CREATE DATABASE IF NOT EXISTS rbac_db;
-CREATE DATABASE IF NOT EXISTS booking_db;
-CREATE DATABASE IF NOT EXISTS notification_db;
+-- Create databases for MLOps platform
+CREATE DATABASE rbac_db;
+CREATE DATABASE booking_db;
+CREATE DATABASE notification_db;
 
 -- Grant permissions
 GRANT ALL PRIVILEGES ON DATABASE rbac_db TO postgres;
