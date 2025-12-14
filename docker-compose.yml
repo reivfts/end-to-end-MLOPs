@@ -1,18 +1,41 @@
 version: '3.8'
 
 services:
-  # Microservices (using SQLite - no PostgreSQL needed)
+  # Microservices
   gateway:
     build: ./gateway
     container_name: mlops-gateway
     ports:
       - "5001:5001"
     environment:
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      # Flask Configuration
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+      
+      # JWT Configuration
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      
+      # Database Configuration
+      DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-campus_services}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      
+      # Service URLs (Docker networking)
+      DOCKER_CONTAINER: "true"
+      USER_MGMT_HOST: user-management
+      BOOKING_HOST: booking
+      GPA_HOST: gpa-calculator
+      NOTIFICATION_HOST: notification
+      MAINTENANCE_HOST: maintenance
     volumes:
       - ./gateway:/app
+      - ./shared:/app/shared
     restart: unless-stopped
+    depends_on:
+      - postgres
 
   user-management:
     build: ./user-management
@@ -20,11 +43,24 @@ services:
     ports:
       - "8002:8002"
     environment:
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-campus_services}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DOCKER_CONTAINER: "true"
+      NOTIFICATION_HOST: notification
+      GATEWAY_HOST: gateway
     volumes:
       - ./user-management:/app
+      - ./shared:/app/shared
     restart: unless-stopped
+    depends_on:
+      - postgres
 
   booking:
     build: ./booking
@@ -32,11 +68,23 @@ services:
     ports:
       - "8001:8001"
     environment:
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-campus_services}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DOCKER_CONTAINER: "true"
+      NOTIFICATION_HOST: notification
     volumes:
       - ./booking:/app
+      - ./shared:/app/shared
     restart: unless-stopped
+    depends_on:
+      - postgres
 
   gpa-calculator:
     build: ./gpa-calculator
@@ -44,10 +92,14 @@ services:
     ports:
       - "8003:8003"
     environment:
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}
+      DOCKER_CONTAINER: "true"
     volumes:
       - ./gpa-calculator:/app
+      - ./shared:/app/shared
     restart: unless-stopped
 
   notification:
@@ -56,11 +108,22 @@ services:
     ports:
       - "8004:8004"
     environment:
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-campus_services}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DOCKER_CONTAINER: "true"
     volumes:
       - ./notification:/app
+      - ./shared:/app/shared
     restart: unless-stopped
+    depends_on:
+      - postgres
 
   maintenance:
     build: ./maintenance
@@ -68,8 +131,36 @@ services:
     ports:
       - "8080:8080"
     environment:
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      DOCKER_CONTAINER: "true"
+      NOTIFICATION_HOST: notification
     volumes:
       - ./maintenance:/app
+      - ./shared:/app/shared
     restart: unless-stopped
+
+  # PostgreSQL Database for Production/Docker
+  postgres:
+    image: postgres:15-alpine
+    container_name: mlops-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-campus_services}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
