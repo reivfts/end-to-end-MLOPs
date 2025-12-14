@@ -409,6 +409,7 @@ def cancel_booking(booking_id: int, user: dict = Depends(verify_token), authoriz
 
     return {
         "message": "Booking cancelled successfully",
+        "notification": "Booking cancelled successfully",
         "booking_id": booking_id
     }
 

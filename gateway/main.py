@@ -27,13 +27,13 @@ SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
-# Service URLs - Fixed to match actual running services
+# Service URLs - All services running and configured
 SERVICES = {
-    'users': 'http://localhost:8002',        # Will fix user-management service next
-    'booking': 'http://localhost:8000',      # Python booking service runs on 8000, not 8001
-    'gpa': 'http://localhost:8003',          # TODO: Service doesn't exist yet
-    'notifications': 'http://localhost:8004', # TODO: Service doesn't exist yet
-    'maintenance': 'http://localhost:8080'   # ✅ Working
+    'users': 'http://localhost:8002',
+    'booking': 'http://localhost:8001',
+    'gpa': 'http://localhost:8003',
+    'notifications': 'http://localhost:8004',
+    'maintenance': 'http://localhost:8080'
 }
 
 # Database setup
@@ -175,7 +175,19 @@ def login():
         user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
         conn.close()
         
-        if not user or user['password'] != password:
+        if not user:
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        # Check password - handle both plain text (default users) and hashed passwords
+        password_valid = False
+        if user['password'].startswith('pbkdf2:sha256:') or user['password'].startswith('scrypt:'):
+            # Hashed password
+            password_valid = check_password_hash(user['password'], password)
+        else:
+            # Plain text password (for default users)
+            password_valid = (user['password'] == password)
+        
+        if not password_valid:
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Create token
@@ -299,15 +311,42 @@ def get_user(user_id):
 def delete_user(user_id):
     """Delete user (admin only)"""
     conn = get_db()
-    result = conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
-    conn.commit()
     
-    if result.rowcount == 0:
+    # Get user info before deleting for notification
+    user = conn.execute('SELECT email, name FROM users WHERE id = ?', (user_id,)).fetchone()
+    
+    if not user:
         conn.close()
         return jsonify({'error': 'User not found'}), 404
     
+    result = conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
+    conn.commit()
     conn.close()
-    return jsonify({'message': 'User deleted successfully'}), 200
+    
+    # Send notification to admins
+    try:
+        actor = request.user
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        
+        # Notify admins about user deletion
+        requests.post(
+            f"{SERVICES['notifications']}/notifications/admin",
+            json={
+                'type': 'user_deleted',
+                'message': f"User {user['name']} ({user['email']}) was deleted",
+                'actor_name': actor.get('name', 'Unknown'),
+                'actor_id': actor.get('userId', 'unknown')
+            },
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=0.5
+        )
+    except:
+        pass  # Non-blocking notification
+    
+    return jsonify({
+        'message': 'User deleted successfully',
+        'notification': f"User {user['name']} ({user['email']}) has been deleted"
+    }), 200
 
 @app.route('/users', methods=['POST'])
 @token_required
@@ -342,9 +381,29 @@ def create_user():
         conn.commit()
         conn.close()
         
+        # Send notification to admins
+        try:
+            actor = request.user
+            token = request.headers.get('Authorization', '').replace('Bearer ', '')
+            
+            requests.post(
+                f"{SERVICES['notifications']}/notifications/admin",
+                json={
+                    'type': 'user_created',
+                    'message': f"New user {data['name']} ({data['email']}) with role {data['role']} was created",
+                    'actor_name': actor.get('name', 'Unknown'),
+                    'actor_id': actor.get('userId', 'unknown')
+                },
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=0.5
+            )
+        except:
+            pass  # Non-blocking notification
+        
         return jsonify({
             'message': 'User created successfully',
-            'userId': user_id
+            'userId': user_id,
+            'notification': f"User {data['name']} ({data['email']}) has been created"
         }), 201
         
     except Exception as e:
@@ -404,6 +463,9 @@ def update_user(user_id):
         return jsonify({'error': 'No valid fields to update'}), 400
     
     try:
+        # Get user info for notification
+        user_info = conn.execute('SELECT name, email FROM users WHERE id = ?', (user_id,)).fetchone()
+        
         update_values.append(user_id)  # Add user_id for WHERE clause
         query = f"UPDATE users SET {', '.join(update_fields)} WHERE id = ?"
         
@@ -411,7 +473,42 @@ def update_user(user_id):
         conn.commit()
         conn.close()
         
-        return jsonify({'message': 'User updated successfully'}), 200
+        # Send notification to admins
+        try:
+            actor = request.user
+            token = request.headers.get('Authorization', '').replace('Bearer ', '')
+            
+            # Build change description
+            changes = []
+            if 'email' in data:
+                changes.append(f"email to {data['email']}")
+            if 'name' in data:
+                changes.append(f"name to {data['name']}")
+            if 'role' in data:
+                changes.append(f"role to {data['role']}")
+            if 'password' in data:
+                changes.append("password")
+            
+            change_text = ', '.join(changes)
+            
+            requests.post(
+                f"{SERVICES['notifications']}/notifications/admin",
+                json={
+                    'type': 'user_updated',
+                    'message': f"User {user_info['name']} ({user_info['email']}) was updated: {change_text}",
+                    'actor_name': actor.get('name', 'Unknown'),
+                    'actor_id': actor.get('userId', 'unknown')
+                },
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=0.5
+            )
+        except:
+            pass  # Non-blocking notification
+        
+        return jsonify({
+            'message': 'User updated successfully',
+            'notification': f"User {user_info['name']} has been updated"
+        }), 200
         
     except Exception as e:
         conn.close()

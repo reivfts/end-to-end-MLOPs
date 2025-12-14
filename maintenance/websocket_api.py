@@ -223,13 +223,29 @@ def update_ticket(ticket_id):
         # Broadcast update to all connected clients
         broadcast_event('ticket_updated', tickets[ticket_id])
         
-        # Notify admins about the update
+        # Send notifications
         auth_header = request.headers.get('Authorization')
         if auth_header:
             token = auth_header.split(' ')[1]
             ticket_desc = ticket.get('request_details', {}).get('description', 'maintenance ticket')
             short_desc = ticket_desc[:30] + '...' if len(ticket_desc) > 30 else ticket_desc
             
+            # Notify the ticket owner (student) about the status change
+            ticket_owner_id = ticket.get('user_id', '')
+            print(f"DEBUG: Ticket owner ID: {ticket_owner_id}, Current user ID: {user['userId']}")
+            if ticket_owner_id and ticket_owner_id != user['userId']:
+                # Only notify if the update was made by someone else (e.g., faculty)
+                print(f"DEBUG: Sending notification to user {ticket_owner_id}")
+                send_notification(
+                    ticket_owner_id,
+                    'maintenance_updated',
+                    f"Your maintenance ticket status changed from '{old_status}' to '{data['status']}': {short_desc}",
+                    token
+                )
+            else:
+                print(f"DEBUG: Not sending notification - same user or no ticket owner")
+            
+            # Notify admins about the update
             notify_admins(
                 'maintenance_updated',
                 f"{user.get('name', 'User')} updated ticket status from '{old_status}' to '{data['status']}' for: {short_desc}",
@@ -241,6 +257,7 @@ def update_ticket(ticket_id):
         return jsonify({
             'success': True,
             'message': 'Ticket updated successfully',
+            'notification': f"Ticket status updated to '{data['status']}'",
             'ticket': tickets[ticket_id]
         })
     except Exception as e:
@@ -281,7 +298,7 @@ def delete_ticket(ticket_id):
         # Broadcast deletion to all connected clients
         broadcast_event('ticket_deleted', {'ticket_id': ticket_id})
         
-        # Send notification to the ticket owner
+        # Send notification to the ticket owner (student) if faculty deleted it
         auth_header = request.headers.get('Authorization')
         if auth_header:
             token = auth_header.split(' ')[1]
@@ -289,12 +306,17 @@ def delete_ticket(ticket_id):
             # Extract first 50 chars of description for notification
             short_desc = ticket_description[:50] + '...' if len(ticket_description) > 50 else ticket_description
             
-            send_notification(
-                user['userId'],
-                'maintenance_deleted',
-                f"Your maintenance ticket was deleted: {short_desc}",
-                token
-            )
+            ticket_owner_id = deleted_ticket.get('user_id', '')
+            
+            # If faculty deleted student's ticket, notify the student
+            if user['role'] == 'faculty' and ticket_owner_id and ticket_owner_id != user['userId']:
+                print(f"DEBUG: Faculty deleted ticket - notifying student {ticket_owner_id}")
+                send_notification(
+                    ticket_owner_id,
+                    'maintenance_deleted',
+                    f"Your maintenance ticket was deleted by faculty: {short_desc}",
+                    token
+                )
             
             # Notify admins about the deletion
             requester = deleted_ticket.get('request_details', {}).get('requester', 'Unknown')
@@ -318,6 +340,7 @@ def delete_ticket(ticket_id):
         return jsonify({
             'success': True,
             'message': 'Ticket deleted successfully',
+            'notification': 'Ticket successfully deleted',
             'ticket': deleted_ticket
         })
     except Exception as e:
@@ -351,6 +374,11 @@ def analyze():
             result['status'] = 'open'
             result['created_at'] = datetime.utcnow().isoformat()
             result['updated_at'] = datetime.utcnow().isoformat()
+            
+            # Store user_id for notification purposes
+            user = verify_token()
+            if user:
+                result['user_id'] = user['userId']
             
             # Store ticket
             tickets[ticket_id] = result

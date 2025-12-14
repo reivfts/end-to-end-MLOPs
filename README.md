@@ -2,19 +2,20 @@
 
 **Project**: Campus Services Hub  
 **Date**: December 13, 2025  
-**Branch**: rbac-implementation  
-**Status**: Production Ready ✅
+**Branch**: main  
+**Status**: Production Ready
 
 ---
 
-## 🎯 **System Overview**
+## System Overview
 
-**Campus Services Hub** is a complete microservices platform for university/campus management with role-based access control. Students, faculty, and administrators can securely access booking, GPA calculation, maintenance requests, and notification systems through a unified authentication gateway.
+Campus Services Hub is a microservices platform for university/campus management with role-based access control (RBAC). The system provides secure access to room booking, GPA calculation, maintenance ticketing, and notification services through a centralized JWT-authenticated gateway.
 
-### **Users & Roles**
-- **Students**: Book rooms, calculate GPA, submit maintenance requests, receive notifications
-- **Faculty**: All student permissions + enhanced access to manage campus resources  
-- **Administrators**: User management + full system oversight with comprehensive notifications
+### User Roles and Access
+
+- **Admin**: User management and notification access only
+- **Faculty**: Access to booking, GPA calculator, maintenance tickets, and notifications
+- **Student**: Access to booking, GPA calculator, maintenance tickets, and notifications
 
 ---
 

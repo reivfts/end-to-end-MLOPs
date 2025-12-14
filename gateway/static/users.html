@@ -475,14 +475,20 @@
                     }
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
+                    if (data.notification) {
+                        showPopupNotification(data.notification, 'success');
+                    }
                     showMessage('User deleted successfully', 'success');
                     loadUsers();
                 } else {
-                    const data = await response.json();
+                    showPopupNotification(data.error || 'Failed to delete user', 'error');
                     showMessage(data.error || 'Failed to delete user', 'error');
                 }
             } catch (error) {
+                showPopupNotification('Network error. Please try again.', 'error');
                 showMessage('Network error. Please try again.', 'error');
             }
         }
@@ -529,12 +535,17 @@
                     });
                 }
 
+                const data = await response.json();
+                
                 if (response.ok) {
+                    if (data.notification) {
+                        showPopupNotification(data.notification, 'success');
+                    }
                     showMessage(`User ${userId ? 'updated' : 'created'} successfully`, 'success');
                     closeModal();
                     loadUsers();
                 } else {
-                    const data = await response.json();
+                    showPopupNotification(data.error || 'Operation failed', 'error');
                     showMessage(data.error || 'Operation failed', 'error');
                 }
             } catch (error) {
@@ -557,6 +568,64 @@
             setTimeout(() => {
                 message.className = 'message';
             }, 5000);
+        }
+
+        function showPopupNotification(message, type = 'success') {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 20px 30px;
+                background: ${type === 'success' ? '#4caf50' : '#f44336'};
+                color: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            popup.textContent = message;
+            
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            if (!document.getElementById('popupAnimationStyle')) {
+                style.id = 'popupAnimationStyle';
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(popup)) {
+                        document.body.removeChild(popup);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         // Close modal when clicking outside

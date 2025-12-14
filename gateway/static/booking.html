@@ -524,17 +524,73 @@
                     }
                 });
                 
+                const data = await response.json();
+                
                 if (response.ok) {
-                    showMessage('Booking cancelled successfully', 'success');
+                    if (data.notification) {
+                        showPopupNotification(data.notification, 'success');
+                    }
                     loadMyBookings();
                     checkAvailability();
                 } else {
-                    const data = await response.json();
-                    showMessage(data.error || 'Failed to cancel booking', 'error');
+                    showPopupNotification(data.error || 'Failed to cancel booking', 'error');
                 }
             } catch (error) {
-                showMessage('Network error. Please try again.', 'error');
+                showPopupNotification('Network error. Please try again.', 'error');
             }
+        }
+
+        function showPopupNotification(message, type = 'success') {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 20px 30px;
+                background: ${type === 'success' ? '#4caf50' : '#f44336'};
+                color: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            popup.textContent = message;
+            
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    document.body.removeChild(popup);
+                }, 300);
+            }, 3000);
         }
 
         function showMessage(text, type) {

@@ -515,32 +515,70 @@
         }
 
         async function updateTicketStatus(ticketId) {
-            const newStatus = prompt('Enter new status (open, in_progress, resolved):');
+            // Create modal for status selection
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
             
-            if (!newStatus || !['open', 'in_progress', 'resolved'].includes(newStatus)) {
-                alert('Invalid status');
-                return;
-            }
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; min-width: 300px;">
+                    <h3 style="margin-bottom: 20px; color: #333;">Update Ticket Status</h3>
+                    <select id="statusSelect" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; margin-bottom: 20px;">
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="confirmUpdate" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Update</button>
+                        <button id="cancelUpdate" style="flex: 1; padding: 12px; background: #e0e0e0; color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('#cancelUpdate').onclick = () => {
+                document.body.removeChild(modal);
+            };
+            
+            modal.querySelector('#confirmUpdate').onclick = async () => {
+                const newStatus = document.getElementById('statusSelect').value;
+                document.body.removeChild(modal);
+                
+                try {
+                    const response = await fetch(`/api/maintenance/tickets/${ticketId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
 
-            try {
-                const response = await fetch(`/api/maintenance/tickets/${ticketId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ status: newStatus })
-                });
-
-                if (response.ok) {
-                    loadTickets();
-                } else {
                     const data = await response.json();
-                    alert(data.error || 'Failed to update ticket');
+
+                    if (response.ok) {
+                        if (data.notification) {
+                            showPopupNotification(data.notification, 'success');
+                        }
+                        loadTickets();
+                    } else {
+                        showPopupNotification(data.error || 'Failed to update ticket', 'error');
+                    }
+                } catch (error) {
+                    showPopupNotification('Network error. Please try again.', 'error');
                 }
-            } catch (error) {
-                alert('Network error. Please try again.');
-            }
+            };
         }
 
         async function deleteTicket(ticketId) {
@@ -556,15 +594,72 @@
                     }
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
+                    if (data.notification) {
+                        showPopupNotification(data.notification, 'success');
+                    }
                     loadTickets();
                 } else {
-                    const data = await response.json();
-                    alert(data.error || 'Failed to delete ticket');
+                    showPopupNotification(data.error || 'Failed to delete ticket', 'error');
                 }
             } catch (error) {
-                alert('Network error. Please try again.');
+                showPopupNotification('Network error. Please try again.', 'error');
             }
+        }
+
+        function showPopupNotification(message, type = 'success') {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 20px 30px;
+                background: ${type === 'success' ? '#4caf50' : '#f44336'};
+                color: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            popup.textContent = message;
+            
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    document.body.removeChild(popup);
+                }, 300);
+            }, 3000);
         }
 
         function showMessage(elementId, text, type) {
