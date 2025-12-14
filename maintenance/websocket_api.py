@@ -45,7 +45,8 @@ def verify_token():
 def send_notification(user_id: str, notification_type: str, message: str, token: str):
     """Send notification to the notification service"""
     try:
-        requests.post(
+        print(f"DEBUG send_notification: Sending to user_id={user_id}, type={notification_type}")
+        response = requests.post(
             f'{NOTIFICATION_SERVICE}/notifications',
             headers={'Authorization': f'Bearer {token}'},
             json={
@@ -55,9 +56,10 @@ def send_notification(user_id: str, notification_type: str, message: str, token:
             },
             timeout=2
         )
+        print(f"DEBUG send_notification: Response status={response.status_code}")
     except Exception as e:
         # Don't fail the main operation if notification fails
-        print(f"Failed to send notification: {e}")
+        print(f"ERROR: Failed to send notification: {e}")
 
 def notify_admins(action_type: str, message: str, actor_name: str, actor_id: str, token: str):
     """Send notification to all admin users - non-blocking"""
@@ -184,10 +186,12 @@ def get_ticket(ticket_id):
 
 @app.route('/tickets/<ticket_id>', methods=['PUT'])
 def update_ticket(ticket_id):
-    """Update a ticket's status - faculty can update any, students only their own"""
+    """Update a ticket - faculty can update any, students only their own"""
+    print(f"DEBUG: update_ticket called for ticket_id={ticket_id}")
     user = verify_token()
     
     if not user:
+        print(f"DEBUG: No user found - unauthorized")
         return jsonify({'error': 'Unauthorized'}), 401
     
     if ticket_id not in tickets:
@@ -598,5 +602,10 @@ if __name__ == '__main__':
     print(f"Loaded {len(tickets)} existing tickets")
     print(f"Admin password: {ADMIN_PASSWORD}")
     print(f"Running on http://127.0.0.1:8080")
+    print(f"DEBUG MODE: Enabled for troubleshooting")
     
-    socketio.run(app, host='0.0.0.0', port=8080, debug=False)
+    # Use debug=False in production, True shows all print statements but may cause issues with Flask-SocketIO
+    import sys
+    sys.stdout.flush()
+    sys.stderr.flush()
+    socketio.run(app, host='0.0.0.0', port=8080, debug=False, log_output=True)
