@@ -1,43 +1,7 @@
 version: '3.8'
 
 services:
-  # Infrastructure
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    expose:
-      - "6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  nats:
-    image: nats:latest
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    command: "-js"
-
-  # Microservices
+  # Microservices (using SQLite - no PostgreSQL needed)
   gateway:
     build: ./gateway
     container_name: mlops-gateway
@@ -46,13 +10,8 @@ services:
     environment:
       FLASK_ENV: production
       FLASK_DEBUG: 0
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      nats:
-        condition: service_started
+    volumes:
+      - ./gateway:/app
     restart: unless-stopped
 
   user-management:
@@ -63,13 +22,8 @@ services:
     environment:
       FLASK_ENV: production
       FLASK_DEBUG: 0
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/rbac_db
-      NATS_URL: nats://nats:4222
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_started
+    volumes:
+      - ./user-management:/app
     restart: unless-stopped
 
   booking:
@@ -80,13 +34,8 @@ services:
     environment:
       FLASK_ENV: production
       FLASK_DEBUG: 0
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/booking_db
-      NATS_URL: nats://nats:4222
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_started
+    volumes:
+      - ./booking:/app
     restart: unless-stopped
 
   gpa-calculator:
@@ -97,9 +46,8 @@ services:
     environment:
       FLASK_ENV: production
       FLASK_DEBUG: 0
-    depends_on:
-      redis:
-        condition: service_healthy
+    volumes:
+      - ./gpa-calculator:/app
     restart: unless-stopped
 
   notification:
@@ -110,13 +58,8 @@ services:
     environment:
       FLASK_ENV: production
       FLASK_DEBUG: 0
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/notification_db
-      NATS_URL: nats://nats:4222
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_started
+    volumes:
+      - ./notification:/app
     restart: unless-stopped
 
   maintenance:
@@ -127,11 +70,6 @@ services:
     environment:
       FLASK_ENV: production
       FLASK_DEBUG: 0
-    depends_on:
-      nats:
-        condition: service_started
+    volumes:
+      - ./maintenance:/app
     restart: unless-stopped
-
-volumes:
-  postgres_data:
-  redis_data:
