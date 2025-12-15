@@ -68,21 +68,21 @@ Student: student@example.com  / student123
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│               Frontend (HTML/JavaScript/CSS)                     │
-│                   Served from Port 5001/static                   │
-│        Role-Based Navigation | JWT in localStorage               │
+│               Frontend (HTML/JavaScript/CSS)                    │
+│                   Served from Port 5001/static                  │
+│        Role-Based Navigation | JWT in localStorage              │
 └───────────────────┬─────────────────────────────────────────────┘
                     │ HTTP/REST Requests (JSON)
                     │ Authorization: Bearer <JWT>
 ┌───────────────────▼─────────────────────────────────────────────┐
-│              Gateway Service (Port 5001)                         │
+│              Gateway Service (Port 5001)                        │
 │    Flask | JWT Validation | API Router | Static File Server     │
 │    Correlation IDs | Logging | CORS | RBAC Enforcement          │
-└─┬────────┬──────────┬───────────┬─────────────┬─────────────────┘
-  │        │          │           │             │
-  │ /api/  │ /api/    │ /api/     │ /api/       │ /api/
-  │ users  │ booking  │ maintenance│ gpa        │ notifications
-  │        │          │           │             │
+└─┬──────────┬──────────┬───────────┬─────────────┬───────────────┘
+  │          │          │           │             │
+  │ /api/    │ /api/    │ /api/     │ /api/       │ /api/
+  │ users    │ booking  │ maintenance│ gpa        │ notifications
+  │          │          │           │             │
 ┌─▼────────┐┌▼─────────┐┌▼──────────┐┌▼─────────┐┌▼─────────────┐
 │User Mgmt ││ Booking  ││Maintenance││   GPA    ││Notification  │
 │Flask 8002││FastAPI   ││Flask+WS   ││Flask 8003││Flask 8004    │
