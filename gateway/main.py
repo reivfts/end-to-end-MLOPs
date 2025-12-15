@@ -27,13 +27,13 @@ SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
-# Service URLs - All services running and configured
+# Service URLs - Read from environment variables for ECS deployment
 SERVICES = {
-    'users': 'http://localhost:8002',
-    'booking': 'http://localhost:8001',
-    'gpa': 'http://localhost:8003',
-    'notifications': 'http://localhost:8004',
-    'maintenance': 'http://localhost:8080'
+    'users': os.getenv('USER_SERVICE_URL', 'http://localhost:8002'),
+    'booking': os.getenv('BOOKING_SERVICE_URL', 'http://localhost:8001'),
+    'gpa': os.getenv('GPA_SERVICE_URL', 'http://localhost:8003'),
+    'notifications': os.getenv('NOTIFICATION_SERVICE_URL', 'http://localhost:8004'),
+    'maintenance': os.getenv('MAINTENANCE_SERVICE_URL', 'http://localhost:8080')
 }
 
 # Database setup

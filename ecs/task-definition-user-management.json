@@ -20,7 +20,7 @@
       "environment": [
         {
           "name": "DATABASE_URL",
-          "value": "postgresql://postgres:YourSecurePassword123@3.21.163.202:5432/rbac_db"
+          "value": "postgresql://postgres:YourSecurePassword123@postgres.campus-services.local:5432/rbac_db"
         },
         {
           "name": "JWT_SECRET",
