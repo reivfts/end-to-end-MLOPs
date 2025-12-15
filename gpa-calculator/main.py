@@ -8,9 +8,35 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import jwt
 from functools import wraps
+import logging
+import uuid
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(correlation_id)s] - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/tmp/gpa.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
+
+# Add correlation ID to all requests
+@app.before_request
+def before_request():
+    request.correlation_id = str(uuid.uuid4())
+    logger.info(f"Request started: {request.method} {request.path}",
+                extra={'correlation_id': request.correlation_id})
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Request completed: {request.method} {request.path} - Status: {response.status_code}",
+                extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
+    return response
 
 # JWT Configuration
 SECRET_KEY = 'your-secret-key-change-in-production'

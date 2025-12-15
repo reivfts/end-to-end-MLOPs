@@ -489,7 +489,8 @@
                     const room = rooms.find(r => r.id === booking.room_id);
                     
                     // Faculty can cancel any booking, students only their own
-                    const canCancel = isFaculty || booking.user_id === user.userId;
+                    // booking.user_id is a string from DB, user.id is from localStorage
+                    const canCancel = isFaculty || booking.user_id === String(user.id);
                     
                     bookingItem.innerHTML = `
                         <div class="booking-info">

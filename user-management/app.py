@@ -12,9 +12,34 @@ from functools import wraps
 from datetime import datetime
 import uuid
 import requests
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(correlation_id)s] - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/tmp/usermgmt.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
+
+# Add correlation ID to all requests
+@app.before_request
+def before_request():
+    request.correlation_id = str(uuid.uuid4())
+    logger.info(f"Request started: {request.method} {request.path}",
+                extra={'correlation_id': request.correlation_id})
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Request completed: {request.method} {request.path} - Status: {response.status_code}",
+                extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
+    return response
 
 # Gateway service URL for creating login credentials
 GATEWAY_URL = 'http://localhost:5001'
@@ -311,9 +336,11 @@ def update_user(user_id):
                         )
                         
                         if not update_response.ok:
-                            print(f"Warning: Failed to sync role change with gateway: {update_response.text}")
+                            logger.warning(f"Failed to sync role change with gateway: {update_response.text}",
+                                         extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
             except Exception as e:
-                print(f"Warning: Failed to sync role change with gateway: {str(e)}")
+                logger.warning(f"Failed to sync role change with gateway: {str(e)}",
+                             extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
                 # Don't fail the request if gateway sync fails
         
         # Notify admins about the update
@@ -398,9 +425,11 @@ def delete_user(user_id):
                 )
                 
                 if not delete_response.ok:
-                    print(f"Warning: Failed to delete user from gateway authentication: {delete_response.text}")
+                    logger.warning(f"Failed to delete user from gateway authentication: {delete_response.text}",
+                                 extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
     except Exception as e:
-        print(f"Warning: Failed to sync user deletion with gateway: {str(e)}")
+        logger.warning(f"Failed to sync user deletion with gateway: {str(e)}",
+                     extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
         # Don't fail the request if gateway sync fails
     
     # Notify admins about deletion
@@ -434,6 +463,6 @@ def get_users_by_role(role):
     return jsonify({'role': role, 'users': [dict(user) for user in users]}), 200
 
 if __name__ == '__main__':
-    print("👥 User Management Service starting on port 8002...")
-    print("✅ Default users created (admin, faculty, student)")
+    logger.info("👥 User Management Service starting on port 8002...", extra={'correlation_id': 'startup'})
+    logger.info("✅ Default users created (admin, faculty, student)", extra={'correlation_id': 'startup'})
     app.run(host='0.0.0.0', port=8002, debug=True)

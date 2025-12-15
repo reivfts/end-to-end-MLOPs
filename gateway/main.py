@@ -18,9 +18,34 @@ from functools import wraps
 import uuid
 import os
 import requests
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(correlation_id)s] - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/tmp/gateway.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
+
+# Add correlation ID to all requests
+@app.before_request
+def before_request():
+    request.correlation_id = str(uuid.uuid4())
+    logger.info(f"Request started: {request.method} {request.path}", 
+                extra={'correlation_id': request.correlation_id})
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Request completed: {request.method} {request.path} - Status: {response.status_code}",
+                extra={'correlation_id': getattr(request, 'correlation_id', 'N/A')})
+    return response
 
 # JWT Configuration
 SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
@@ -771,15 +796,13 @@ def notifications_page():
     return send_from_directory('static', 'notifications.html')
 
 if __name__ == '__main__':
-    print("🚪 API Gateway Hub starting on port 5001...")
-    print("📝 Default users:")
-    print("   Admin: admin@example.com / admin123")
-    print("   Faculty: faculty@example.com / faculty123")
-    print("   Student: student@example.com / student123")
-    print("")
-    print("🔐 Role-Based Access:")
-    print("   Admin → User Management only")
-    print("   Faculty/Student → Booking, GPA, Notifications, Maintenance")
-    print("")
-    print("🌐 Frontend available at: http://localhost:5001")
+    logger.info("🚪 API Gateway Hub starting on port 5001...", extra={'correlation_id': 'startup'})
+    logger.info("📝 Default users:", extra={'correlation_id': 'startup'})
+    logger.info("   Admin: admin@example.com / admin123", extra={'correlation_id': 'startup'})
+    logger.info("   Faculty: faculty@example.com / faculty123", extra={'correlation_id': 'startup'})
+    logger.info("   Student: student@example.com / student123", extra={'correlation_id': 'startup'})
+    logger.info("🔐 Role-Based Access:", extra={'correlation_id': 'startup'})
+    logger.info("   Admin → User Management only", extra={'correlation_id': 'startup'})
+    logger.info("   Faculty/Student → Booking, GPA, Notifications, Maintenance", extra={'correlation_id': 'startup'})
+    logger.info("🌐 Frontend available at: http://localhost:5001", extra={'correlation_id': 'startup'})
     app.run(host='0.0.0.0', port=5001, debug=False)

@@ -4,7 +4,7 @@ Room booking with 8 time slots per day
 Port: 8001
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
@@ -12,8 +12,33 @@ from datetime import datetime
 from typing import Optional
 import jwt
 import requests
+import logging
+import uuid
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(correlation_id)s] - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/tmp/booking.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Booking Service")
+
+# Add correlation ID middleware
+@app.middleware("http")
+async def add_correlation_id(request: Request, call_next):
+    correlation_id = str(uuid.uuid4())
+    request.state.correlation_id = correlation_id
+    logger.info(f"Request started: {request.method} {request.url.path}",
+                extra={'correlation_id': correlation_id})
+    response = await call_next(request)
+    logger.info(f"Request completed: {request.method} {request.url.path} - Status: {response.status_code}",
+                extra={'correlation_id': correlation_id})
+    return response
 
 # JWT Configuration (must match gateway)
 SECRET_KEY = 'your-secret-key-change-in-production'
@@ -127,7 +152,7 @@ def send_notification(user_id: str, notification_type: str, message: str, token:
         )
     except Exception as e:
         # Don't fail the main operation if notification fails
-        print(f"Failed to send notification: {e}")
+        logger.warning(f"Failed to send notification: {e}", extra={'correlation_id': 'notification'})
 
 def notify_admins(action_type: str, message: str, actor_name: str, actor_id: str, token: str):
     """Send notification to all admin users - non-blocking"""
@@ -433,8 +458,8 @@ def get_my_bookings(user: dict = Depends(verify_token)):
 
 if __name__ == "__main__":
     import uvicorn
-    print("📅 Booking Service starting on port 8001...")
-    print("🕐 Available time slots:")
+    logger.info("📅 Booking Service starting on port 8001...", extra={'correlation_id': 'startup'})
+    logger.info("🕐 Available time slots:", extra={'correlation_id': 'startup'})
     for i, slot in enumerate(TIME_SLOTS):
-        print(f"   {i}: {slot}")
+        logger.info(f"   {i}: {slot}", extra={'correlation_id': 'startup'})
     uvicorn.run(app, host="0.0.0.0", port=8001)
