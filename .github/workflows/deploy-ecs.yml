@@ -1,10 +1,7 @@
 name: Deploy to ECS
 
 on:
-  workflow_run:
-    workflows: ["Docker Build and Publish"]
-    types:
-      - completed
+  push:
     branches: [main, cleaned-architecture]
   workflow_dispatch:
     inputs:
@@ -21,7 +18,6 @@ jobs:
   deploy:
     name: Deploy to ECS
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     
     steps:
     - name: Checkout code
