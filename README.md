@@ -32,17 +32,17 @@ Campus Services Hub modernizes university operations through a microservices arc
 
 ### Key Features
 
-✅ **6 Independent Microservices** - Separate databases, independent deployment  
-✅ **JWT Authentication** - Secure token-based auth (HS256, 24-hour expiry)  
-✅ **Role-Based Access Control** - Admin/Faculty/Student permissions  
-✅ **Database Abstraction Layer** - SQLite (dev) or PostgreSQL (production)  
-✅ **Connection Pooling** - Thread-safe PostgreSQL connection pool (2-20 connections)  
-✅ **Distributed Tracing** - Correlation IDs track requests across all services  
-✅ **Comprehensive Logging** - Python logging with structured format, dual output (file + stdout)  
-✅ **Docker Support** - Full containerization with docker-compose orchestration  
-✅ **CI/CD Pipeline** - GitHub Actions for automated testing and Docker builds  
-✅ **AI Integration** - DistilBERT NLP model for maintenance ticket classification  
-✅ **WebSocket Support** - Real-time updates for maintenance ticket status
+**6 Independent Microservices** - Separate databases, independent deployment  
+**JWT Authentication** - Secure token-based auth (HS256, 24-hour expiry)  
+**Role-Based Access Control** - Admin/Faculty/Student permissions  
+**Database Abstraction Layer** - SQLite (dev) or PostgreSQL (production)  
+**Connection Pooling** - Thread-safe PostgreSQL connection pool (2-20 connections)  
+**Distributed Tracing** - Correlation IDs track requests across all services  
+**Comprehensive Logging** - Python logging with structured format, dual output (file + stdout)  
+**Docker Support** - Full containerization with docker-compose orchestration  
+**CI/CD Pipeline** - GitHub Actions for automated testing and Docker builds  
+**AI Integration** - DistilBERT NLP model for maintenance ticket classification  
+**WebSocket Support** - Real-time updates for maintenance ticket status
 
 ### User Roles & Access
 
@@ -1137,18 +1137,18 @@ bash start_all.sh
 
 | Service | Port | Status | Auth | Database | Framework | Features |
 |---------|------|--------|------|----------|-----------|----------|
-| Gateway | 5001 | ✅ Ready | JWT | SQLite/PostgreSQL | Flask | Auth, Routing, Static Files, Logging |
-| User Mgmt | 8002 | ✅ Ready | JWT | SQLite/PostgreSQL | Flask | CRUD, RBAC, Notifications, Logging |
-| Booking | 8001 | ✅ Ready | JWT | SQLite/PostgreSQL | FastAPI | Async, Swagger Docs, Logging |
-| GPA Calc | 8003 | ✅ Ready | JWT | None | Flask | Stateless, Logging |
-| Notification | 8004 | ✅ Ready | JWT | SQLite/PostgreSQL | Flask | Events, History, Logging |
-| Maintenance | 8080 | ✅ Ready | JWT+WS | In-Memory | Flask-SocketIO | AI, WebSocket, Real-time, Logging |
+| Gateway | 5001 |  Ready | JWT | SQLite/PostgreSQL | Flask | Auth, Routing, Static Files, Logging |
+| User Mgmt | 8002 |  Ready | JWT | SQLite/PostgreSQL | Flask | CRUD, RBAC, Notifications, Logging |
+| Booking | 8001 |  Ready | JWT | SQLite/PostgreSQL | FastAPI | Async, Swagger Docs, Logging |
+| GPA Calc | 8003 |  Ready | JWT | None | Flask | Stateless, Logging |
+| Notification | 8004 |  Ready | JWT | SQLite/PostgreSQL | Flask | Events, History, Logging |
+| Maintenance | 8080 |  Ready | JWT+WS | In-Memory | Flask-SocketIO | AI, WebSocket, Real-time, Logging |
 
-**Shared Infrastructure**: ✅ Connection pooling, retry logic, circuit breaker, correlation IDs
+**Shared Infrastructure**: Connection pooling, retry logic, circuit breaker, correlation IDs
 
-**CI/CD**: ✅ GitHub Actions (lint, test, build, security scan)
+**CI/CD**: GitHub Actions (lint, test, build, security scan)
 
-**Deployment**: ✅ Docker Compose, PostgreSQL 15, health checks
+**Deployment**: Docker Compose, PostgreSQL 15, health checks
 
 ---
 
