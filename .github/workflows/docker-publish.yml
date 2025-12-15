@@ -309,10 +309,8 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Deploy PostgreSQL
-      run: |
-        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-postgres.json
-        aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service postgres-service --task-definition campus-services-postgres --force-new-deployment --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+    # NOTE: PostgreSQL is NOT redeployed to keep its IP stable
+    # If you need to redeploy postgres, do it manually in AWS Console
 
     - name: Deploy Booking Service
       run: |
