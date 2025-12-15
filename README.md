@@ -90,9 +90,9 @@ Student: student@example.com  / student123
 │JWT Auth  ││JWT Auth  ││JWT+WS Auth││JWT Auth  ││JWT Auth      │
 │CRUD Ops  ││Async API ││AI Model   ││Stateless ││Event System  │
 └─────┬────┘└─────┬────┘└─────┬─────┘└──────────┘└─────┬────────┘
-      │           │           │                         │
-      │           │           │                         │
-      └───────────┴───────────┴─────────────────────────┘
+      │           │           │                        │
+      │           │           │                        │
+      └───────────┴───────────┴────────────────────────┘
                               │
             ┌─────────────────▼─────────────────┐
             │   shared/ Database Abstraction    │
@@ -101,7 +101,7 @@ Student: student@example.com  / student123
             └───────────────────────────────────┘
                       │               │
          ┌────────────▼─────┐   ┌────▼───────────────────┐
-         │ SQLite (Local Dev)│   │PostgreSQL (Docker/Prod)│
+         │ SQLite(Local Dev)│   │PostgreSQL (Docker/Prod)│
          │ - gateway.db     │   │ - campus_services DB   │
          │ - users.db       │   │ - users table          │
          │ - bookings.db    │   │ - bookings table       │
@@ -608,7 +608,7 @@ cloudMLOPS/
 ├── docker-compose.yml          # Docker orchestration
 ├── init-db-postgres.sql        # PostgreSQL schema initialization
 ├── start_all.sh                # Local startup script (SQLite mode)
-└── README.md                   # This file
+└── README.md                   
 ```
 
 ### Local Development Workflow
@@ -1190,10 +1190,8 @@ MIT License - See LICENSE file for details.
 ## Contact
 
 **Repository**: https://github.com/reivfts/end-to-end-MLOPs  
-**Author**: reivfts  
+**Authors**: Bryan Nguyen, Kevin Truong, Rei Choy-Yuen
 **Last Updated**: December 15, 2025  
 **Version**: 3.0 - Production Ready with Database Abstraction & Comprehensive Logging
 
 ---
-
-**🚀 Campus Services Hub is production-ready with full microservices architecture, PostgreSQL support, correlation IDs, and CI/CD pipeline!**
