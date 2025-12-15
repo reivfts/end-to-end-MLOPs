@@ -1,0 +1,43 @@
+{
+  "family": "campus-services-postgres",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "postgres",
+      "image": "postgres:15-alpine",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5432,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "POSTGRES_USER",
+          "value": "postgres"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "value": "YourSecurePassword123"
+        },
+        {
+          "name": "POSTGRES_INITDB_ARGS",
+          "value": "-U postgres"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/campus-services",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "postgres"
+        }
+      }
+    }
+  ]
+}

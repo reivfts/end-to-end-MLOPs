@@ -1,0 +1,131 @@
+name: Deploy to ECS
+
+on:
+  workflow_run:
+    workflows: ["Docker Build and Publish"]
+    types:
+      - completed
+    branches: [main, cleaned-architecture]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy (all, postgres, booking, gateway, user-management, gpa-calculator, notification, maintenance)'
+        required: true
+        default: 'all'
+
+env:
+  AWS_REGION: us-east-2
+  ECS_CLUSTER: UNIVERSITY_SERVICES_HUB
+
+jobs:
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Deploy PostgreSQL
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'postgres' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering PostgreSQL task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-postgres.json
+        echo "Updating PostgreSQL service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service postgres-service \
+          --task-definition campus-services-postgres \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deploy Booking Service
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'booking' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering Booking task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-booking.json
+        echo "Updating Booking service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service booking-service \
+          --task-definition campus-services-booking \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deploy Gateway Service
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'gateway' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering Gateway task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-gateway.json
+        echo "Updating Gateway service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service gateway-service \
+          --task-definition campus-services-gateway \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deploy User Management Service
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'user-management' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering User Management task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-user-management.json
+        echo "Updating User Management service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service user-management-service \
+          --task-definition campus-services-user-management \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deploy GPA Calculator Service
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'gpa-calculator' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering GPA Calculator task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-gpa-calculator.json
+        echo "Updating GPA Calculator service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service gpa-calculator-service \
+          --task-definition campus-services-gpa-calculator \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deploy Notification Service
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'notification' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering Notification task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-notification.json
+        echo "Updating Notification service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service notification-service \
+          --task-definition campus-services-notification \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deploy Maintenance Service
+      if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'maintenance' || github.event_name == 'workflow_run' }}
+      run: |
+        echo "Registering Maintenance task definition..."
+        aws ecs register-task-definition --cli-input-json file://ecs/task-definition-maintenance.json
+        echo "Updating Maintenance service..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service maintenance-service \
+          --task-definition campus-services-maintenance \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }} || echo "Service may not exist yet"
+
+    - name: Deployment Summary
+      run: |
+        echo "✅ Deployment workflow completed"
+        echo "Check CloudWatch Logs for service updates"

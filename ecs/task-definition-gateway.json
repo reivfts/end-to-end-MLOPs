@@ -1,0 +1,52 @@
+{
+  "family": "campus-services-gateway",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "gateway",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:gateway-latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5001,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "USER_SERVICE_URL",
+          "value": "http://user-management.campus-services.local:8002"
+        },
+        {
+          "name": "BOOKING_SERVICE_URL",
+          "value": "http://booking.campus-services.local:8000"
+        },
+        {
+          "name": "GPA_SERVICE_URL",
+          "value": "http://gpa-calculator.campus-services.local:8003"
+        },
+        {
+          "name": "NOTIFICATION_SERVICE_URL",
+          "value": "http://notification.campus-services.local:8004"
+        },
+        {
+          "name": "MAINTENANCE_SERVICE_URL",
+          "value": "http://maintenance.campus-services.local:8080"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/campus-services",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "gateway"
+        }
+      }
+    }
+  ]
+}

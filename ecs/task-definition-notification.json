@@ -1,0 +1,40 @@
+{
+  "family": "campus-services-notification",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "notification",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:notification-latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8004,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://postgres:YourSecurePassword123@postgres.campus-services.local:5432/notification_db"
+        },
+        {
+          "name": "NATS_URL",
+          "value": "nats://nats.campus-services.local:4222"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/campus-services",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "notification"
+        }
+      }
+    }
+  ]
+}

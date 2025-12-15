@@ -1,0 +1,40 @@
+{
+  "family": "campus-services-booking",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "booking",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:booking-latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://postgres:YourSecurePassword123@postgres.campus-services.local:5432/booking_db"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://redis.campus-services.local:6379"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/campus-services",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "booking"
+        }
+      }
+    }
+  ]
+}

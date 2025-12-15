@@ -1,0 +1,40 @@
+{
+  "family": "campus-services-user-management",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::643771447281:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "user-management",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:user-management-latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8002,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://postgres:YourSecurePassword123@postgres.campus-services.local:5432/rbac_db"
+        },
+        {
+          "name": "JWT_SECRET",
+          "value": "your-jwt-secret-key-change-this"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/campus-services",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "user-management"
+        }
+      }
+    }
+  ]
+}
