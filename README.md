@@ -1,365 +1,340 @@
-# Campus Services Hub - Cloud MLOps Platform# Campus Services Hub - Complete Documentation
+# Campus Services Hub - Microservices Platform
 
+**Microservices Architecture** | **JWT Authentication** | **Role-Based Access Control** | **AI-Powered** | **Docker Ready**
 
+> A production-ready campus management platform with 6 independent microservices, PostgreSQL/SQLite abstraction, correlation IDs, and comprehensive logging.
 
-**Microservices Architecture** | **JWT Authentication** | **Role-Based Access Control** | **AWS Ready****Project**: Campus Services Hub  
-
-**Date**: December 13, 2025  
-
----**Branch**: main  
-
-**Status**: Production Ready
-
-## 📋 Table of Contents
+**Repository**: [reivfts/end-to-end-MLOPs](https://github.com/reivfts/end-to-end-MLOPs)  
+**Last Updated**: December 15, 2025  
+**Status**: Production Ready ✅
 
 ---
 
+## 📋 Table of Contents
+
 - [System Overview](#system-overview)
-
-- [Quick Start](#quick-start)## System Overview
-
 - [Architecture](#architecture)
-
-- [Services](#services)Campus Services Hub is a microservices platform for university/campus management with role-based access control (RBAC). The system provides secure access to room booking, GPA calculation, maintenance ticketing, and notification services through a centralized JWT-authenticated gateway.
-
+- [Quick Start](#quick-start)
+- [Services](#services)
 - [Configuration](#configuration)
+- [Docker Deployment](#docker-deployment)
+- [Development](#development)
+- [API Documentation](#api-documentation)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
 
-- [Docker Deployment](#docker-deployment)### User Roles and Access
+---
 
-- [AWS Deployment](#aws-deployment)
+## System Overview
 
-- [Development](#development)- **Admin**: User management and notification access only
+Campus Services Hub modernizes university operations through a microservices architecture. The system provides room booking, GPA calculations, AI-powered maintenance ticketing, notifications, and user management—all secured with JWT authentication and role-based access control.
 
-- **Faculty**: Access to booking, GPA calculator, maintenance tickets, and notifications
+### Key Features
 
----- **Student**: Access to booking, GPA calculator, maintenance tickets, and notifications
+✅ **6 Independent Microservices** - Separate databases, independent deployment  
+✅ **JWT Authentication** - Secure token-based auth (HS256, 24-hour expiry)  
+✅ **Role-Based Access Control** - Admin/Faculty/Student permissions  
+✅ **Database Abstraction Layer** - SQLite (dev) or PostgreSQL (production)  
+✅ **Connection Pooling** - Thread-safe PostgreSQL connection pool (2-20 connections)  
+✅ **Distributed Tracing** - Correlation IDs track requests across all services  
+✅ **Comprehensive Logging** - Python logging with structured format, dual output (file + stdout)  
+✅ **Docker Support** - Full containerization with docker-compose orchestration  
+✅ **CI/CD Pipeline** - GitHub Actions for automated testing and Docker builds  
+✅ **AI Integration** - DistilBERT NLP model for maintenance ticket classification  
+✅ **WebSocket Support** - Real-time updates for maintenance ticket status
 
+### User Roles & Access
 
+| Role | Permissions |
+|------|-------------|
+| **Admin** | User management, notifications, system monitoring |
+| **Faculty** | Booking, GPA calculator, maintenance tickets, notifications |
+| **Student** | Booking, GPA calculator, maintenance tickets, notifications |
 
-## System Overview---
+### Default Credentials
 
+```
+Admin:   admin@example.com    / admin123
+Faculty: faculty@example.com  / faculty123
+Student: student@example.com  / student123
+```
 
+---
 
-Campus Services Hub is a production-ready microservices platform for university management with JWT authentication and role-based access control. The system provides room booking, GPA calculation, maintenance ticketing, notifications, and user management through a centralized gateway.## 🏗️ **System Architecture**
+## Architecture
 
+### High-Level System Diagram
 
-
-### User Roles & Access```
-
+```
 ┌─────────────────────────────────────────────────────────────────┐
-
-| Role | Permissions |│                    Frontend (HTML/JavaScript)                    │
-
-|------|-------------|│                       localhost:5001/static                      │
-
-| **Admin** | User management, notifications, system monitoring |│           Role-Based Navigation | JWT Authentication             │
-
-| **Faculty** | All student features + enhanced booking privileges |└───────────────────┬─────────────────────────────────────────────┘
-
-| **Student** | Booking, GPA calculator, maintenance tickets, notifications |                    │ HTTP/HTTPS Requests
-
+│               Frontend (HTML/JavaScript/CSS)                     │
+│                   Served from Port 5001/static                   │
+│        Role-Based Navigation | JWT in localStorage               │
+└───────────────────┬─────────────────────────────────────────────┘
+                    │ HTTP/REST Requests (JSON)
+                    │ Authorization: Bearer <JWT>
 ┌───────────────────▼─────────────────────────────────────────────┐
-
-### Default Credentials│                Gateway Service (Port 5001)                       │
-
-│           Flask | JWT Auth | API Routing | Static Files         │
-
-```└─┬────────┬──────────┬───────────┬─────────────┬─────────────────┘
-
-Admin:   admin@example.com    / admin123  │        │          │           │             │
-
-Faculty: faculty@example.com  / faculty123  │ Route  │ Route    │ Route     │ Route       │ Route
-
-Student: student@example.com  / student123  │        │          │           │             │
-
-```┌─▼────────┐ ┌▼──────────┐ ┌▼────────────┐ ┌▼──────────┐ ┌▼────────────┐
-
-│User Mgmt │ │  Booking  │ │Maintenance  │ │    GPA    │ │Notification │
-
----│Flask 8002│ │FastAPI8001│ │Flask+WS 8080│ │Flask 8003 │ │Flask 8004   │
-
-│   JWT    │ │   JWT     │ │    JWT      │ │   JWT     │ │    JWT      │
-
-## Quick Start└─────┬────┘ └─────┬─────┘ └─────┬───────┘ └─────┬─────┘ └─────┬───────┘
-
-      │             │             │             │             │
-
-### Prerequisites      └─────────────┼─────────────┼─────────────┼─────────────┘
-
-                    │             │             │
-
-- Python 3.8+ (3.13 recommended)            ┌───────▼─────────────▼─────────────▼───────┐
-
-- SQLite3            │              SQLite Databases             │
-
-- Docker & Docker Compose (optional, for containerized deployment)            │  users.db | bookings.db | maintenance.db  │
-
-- PostgreSQL (optional, for production/AWS)            │  gateway.db | notifications.db            │
-
-            └───────────────────────────────────────────┘
-
-### Local Development```
-
-
-
-1. **Clone and setup virtual environment:**---
-
-   ```bash
-
-   git clone <repository>## 🔐 **Authentication & Security**
-
-   cd cloudMLOPS
-
-   python3 -m venv venv### **JWT Authentication Flow**
-
-   source venv/bin/activate  # On Windows: venv\Scripts\activate1. **Login**: User authenticates via Gateway → Receives JWT token (24-hour expiry)
-
-   ```2. **Authorization**: Each service independently validates JWT tokens
-
-3. **RBAC**: Token contains role information for permission checks
-
-2. **Install dependencies for each service:**4. **Security**: All sensitive operations require valid JWT
-
-   ```bash
-
-   pip install flask flask-cors pyjwt werkzeug fastapi uvicorn flask-socketio python-socketio requests### **Default Users**
-
-   pip install -r shared/requirements.txt  # For new shared modules```
-
-   ```Admin:   admin@example.com    / admin123    (Full system access)
-
-Faculty: faculty@example.com  / faculty123  (Enhanced permissions) 
-
-3. **Start all services:**Student: student@example.com  / student123  (Basic access)
-
-   ```bash```
-
-   ./start_all.sh
-
-   ```---
-
-   
-
-   Or manually in separate terminals:## 🚀 **Services Documentation**
-
-   ```bash
-
-   cd gateway && python3 main.py          # Port 5001 (Gateway + Frontend)### **1. Gateway Service (Port 5001)** 
-
-   cd user-management && python3 app.py   # Port 8002 (User CRUD)**Purpose**: Central authentication hub and API router  
-
-   cd booking && python3 main.py          # Port 8001 (Room Bookings)**Tech Stack**: Python Flask + SQLite  
-
-   cd gpa-calculator && python3 main.py   # Port 8003 (GPA Calculator)**Database**: `gateway.db`
-
-   cd notification && python3 app.py      # Port 8004 (Notifications)
-
-   cd maintenance && python3 websocket_api.py  # Port 8080 (Maintenance + AI)**Key Features**:
-
-   ```- ✅ JWT token generation and validation
-
-- ✅ User authentication (login/logout)
-
-4. **Access the system:**- ✅ Static file serving (frontend)
-
-   - Frontend: http://localhost:5001- ✅ API routing to all microservices
-
-   - API Docs: http://localhost:8001/docs (FastAPI)- ✅ CORS enabled for web clients
-
-
-
----**Core Endpoints**:
-
-- `POST /auth/login` - User authentication
-
-## Architecture- `GET /auth/me` - Current user information
-
-- `POST /api/users` - Create user (Admin only)
-
-```- `GET /api/users` - List users
-
-┌─────────────────────────────────────────────────────────────────┐- `DELETE /api/users/{id}` - Delete user (Admin only)
-
-│                  Frontend (HTML/JavaScript)                      │
-
-│                     localhost:5001/static                        │---
-
-│          Role-Based Navigation | JWT Authentication             │
-
-└───────────────────┬─────────────────────────────────────────────┘### **2. User Management Service (Port 8002)**
-
-                    │ HTTP/HTTPS**Purpose**: User CRUD operations and role management  
-
-┌───────────────────▼─────────────────────────────────────────────┐**Tech Stack**: Python Flask + SQLite  
-
-│               Gateway Service (Port 5001)                        │**Database**: `users.db`
-
-│         Flask | JWT Auth | API Routing | Static Files           │
-
-└─┬────────┬──────────┬───────────┬─────────────┬─────────────────┘**Key Features**:
-
-  │        │          │           │             │- ✅ Complete user lifecycle management
-
-┌─▼────┐ ┌▼──────┐ ┌▼────────┐ ┌▼──────┐ ┌▼──────────┐- ✅ Role assignment (Student/Faculty/Admin)
-
-│User  │ │Booking│ │GPA Calc │ │Notif  │ │Maintenance│- ✅ Admin notification triggers
-
-│8002  │ │8001   │ │8003     │ │8004   │ │8080       │- ✅ JWT-secured endpoints
-
-│Flask │ │FastAPI│ │Flask    │ │Flask  │ │Flask+WS   │
-
-└──┬───┘ └───┬───┘ └────┬────┘ └───┬───┘ └─────┬─────┘**Core Endpoints**:
-
-   │         │          │          │           │- `GET /users` - List all users
-
-   └─────────┴──────────┴──────────┴───────────┘- `POST /users` - Create new user  
-
-                        │- `PUT /users/{id}` - Update user
-
-            ┌───────────▼───────────┐- `DELETE /users/{id}` - Delete user
-
-            │   SQLite Databases    │- `GET /users/{id}` - Get user details
-
-            │   (or PostgreSQL)     │
-
-            └───────────────────────┘---
-
+│              Gateway Service (Port 5001)                         │
+│    Flask | JWT Validation | API Router | Static File Server     │
+│    Correlation IDs | Logging | CORS | RBAC Enforcement          │
+└─┬────────┬──────────┬───────────┬─────────────┬─────────────────┘
+  │        │          │           │             │
+  │ /api/  │ /api/    │ /api/     │ /api/       │ /api/
+  │ users  │ booking  │ maintenance│ gpa        │ notifications
+  │        │          │           │             │
+┌─▼────────┐┌▼─────────┐┌▼──────────┐┌▼─────────┐┌▼─────────────┐
+│User Mgmt ││ Booking  ││Maintenance││   GPA    ││Notification  │
+│Flask 8002││FastAPI   ││Flask+WS   ││Flask 8003││Flask 8004    │
+│          ││8001      ││8080       ││          ││              │
+│JWT Auth  ││JWT Auth  ││JWT+WS Auth││JWT Auth  ││JWT Auth      │
+│CRUD Ops  ││Async API ││AI Model   ││Stateless ││Event System  │
+└─────┬────┘└─────┬────┘└─────┬─────┘└──────────┘└─────┬────────┘
+      │           │           │                         │
+      │           │           │                         │
+      └───────────┴───────────┴─────────────────────────┘
+                              │
+            ┌─────────────────▼─────────────────┐
+            │   shared/ Database Abstraction    │
+            │   config.py | database.py         │
+            │   http_client.py (retry logic)    │
+            └───────────────────────────────────┘
+                      │               │
+         ┌────────────▼─────┐   ┌────▼───────────────────┐
+         │ SQLite (Local Dev)│   │PostgreSQL (Docker/Prod)│
+         │ - gateway.db     │   │ - campus_services DB   │
+         │ - users.db       │   │ - users table          │
+         │ - bookings.db    │   │ - bookings table       │
+         │ - notifications  │   │ - notifications table  │
+         │   .db            │   │ - Connection Pool      │
+         │ (4 separate DBs) │   │ (Shared instance)      │
+         └──────────────────┘   └────────────────────────┘
 ```
 
-## 🚀 **Quick Start Guide**
+### Service Communication
 
-### Authentication Flow
+- **Frontend → Gateway**: HTTP/REST with JWT in Authorization header
+- **Gateway → Services**: HTTP/REST proxy with JWT forwarding
+- **Services → Database**: Connection pool (PostgreSQL) or direct (SQLite)
+- **Services → Notification**: HTTP POST for event notifications
+- **Maintenance ↔ Clients**: WebSocket (Socket.IO) for real-time updates
 
-### **1. Start All Services**
+---
 
-1. **Login**: User authenticates via Gateway → Receives JWT token (24-hour expiry)```bash
+## Quick Start
 
-2. **Authorization**: Each service independently validates JWT tokens# Start services in order (each in separate terminal)
+### Prerequisites
 
-3. **RBAC**: Token contains role information for permission checkscd gateway && python3 main.py          # Port 5001
+- **Python 3.8+** (3.13 recommended)
+- **Git** (for cloning repository)
+- **Docker & Docker Compose** (optional, for containerized deployment)
+- **PostgreSQL** (optional, for production; included in docker-compose)
 
-4. **Security**: All sensitive operations require valid JWTcd user-management && python3 app.py   # Port 8002  
+### Option 1: Local Development (SQLite)
 
-cd booking && python3 main.py          # Port 8001
+```bash
+# 1. Clone repository
+git clone https://github.com/reivfts/end-to-end-MLOPs.git
+cd end-to-end-MLOPs
 
----cd gpa-calculator && python3 main.py   # Port 8003
+# 2. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-cd notification && python3 app.py      # Port 8004
+# 3. Install dependencies for all services
+pip install flask flask-cors pyjwt werkzeug requests
+pip install fastapi uvicorn
+pip install flask-socketio python-socketio
+pip install transformers torch sentencepiece protobuf
+pip install -r shared/requirements.txt
 
-## Servicescd maintenance && python3 websocket_api.py  # Port 8080
+# 4. Start all services (uses SQLite by default)
+bash start_all.sh
 
+# 5. Access the application
+# Frontend: http://localhost:5001
+# Login with default credentials above
 ```
+
+### Option 2: Docker Deployment (PostgreSQL)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/reivfts/end-to-end-MLOPs.git
+cd end-to-end-MLOPs
+
+# 2. Start all services with PostgreSQL
+docker-compose up --build
+
+# 3. Access the application
+# Frontend: http://localhost:5001
+# PostgreSQL: localhost:5432 (campus_services DB)
+# All services auto-connected via Docker network
+```
+
+### Verify Services Running
+
+```bash
+# Check all services are healthy
+curl http://localhost:5001/health  # Gateway
+curl http://localhost:8001/health  # Booking
+curl http://localhost:8002/health  # User Management
+curl http://localhost:8003/health  # GPA Calculator
+curl http://localhost:8004/health  # Notification
+curl http://localhost:8080/health  # Maintenance
+
+# All should return: {"status": "healthy"}
+```
+
+---
+
+## Services
 
 ### 1. Gateway Service (Port 5001)
 
-**Central authentication hub and API router**### **2. Access the System**
+**Purpose**: Central authentication hub and API router
 
-- **Frontend**: http://localhost:5001
+**Technology**: Flask + SQLite/PostgreSQL  
+**Database**: `gateway.db` (SQLite) or `campus_services.users` (PostgreSQL)  
+**Entry Point**: `gateway/main.py`
 
-- JWT token generation and validation- **Login**: Use default credentials above
-
-- User authentication (login/logout)- **API Docs**: http://localhost:8001/docs (FastAPI auto-docs)
-
-- Static file serving (frontend)
-
-- API routing to all microservices---
-
-- CORS enabled
-
-## 🎉 **System Status: COMPLETE**
-
-**Tech**: Flask + SQLite (`gateway.db`)
-
-| Service | Port | Status | JWT | Database | Features |
-
-**Key Endpoints**:|---------|------|--------|-----|----------|----------|
-
-- `POST /auth/login` - User authentication| Gateway | 5001 | ✅ Complete | ✅ | gateway.db | Auth + Routing |
-
-- `GET /auth/me` - Current user info| User-Mgmt | 8002 | ✅ Complete | ✅ | users.db | CRUD + Notifications |  
-
-- `GET /health` - Health check| Booking | 8001 | ✅ Complete | ✅ | bookings.db | Reservations + FastAPI |
-
-| GPA | 8003 | ✅ Complete | ✅ | None | Calculations |
-
-### 2. User Management (Port 8002)| Notification | 8004 | ✅ Complete | ✅ | notifications.db | Admin System |
-
-**User CRUD operations and role management**| Maintenance | 8080 | ✅ Complete | ✅ | maintenance.db | AI + WebSocket |
-
-
-
-- Complete user lifecycle management**Campus Services Hub is production-ready with full RBAC implementation!** 🚀
-
-- Role assignment (Student/Faculty/Admin)
-
-- Admin notification triggers---
-
-- JWT-secured endpoints
-
-*Last Updated: December 13, 2025 - Complete System Documentation*
-**Tech**: Flask + SQLite (`users.db`)
+**Responsibilities**:
+- JWT token generation and validation
+- User authentication (login/logout)
+- API routing to all microservices
+- Static file serving (frontend HTML/CSS/JS)
+- CORS configuration
+- Correlation ID generation
+- Request/response logging
 
 **Key Endpoints**:
-- `GET /users` - List users
-- `POST /users` - Create user
-- `PUT /users/{id}` - Update user
+- `POST /auth/login` - User authentication, returns JWT token
+- `GET /auth/me` - Get current user information from JWT
+- `POST /auth/register` - Register new user account
+- `GET /health` - Health check endpoint
+- `GET /` - Serve frontend dashboard
+- `GET /<page>.html` - Serve frontend pages (booking, gpa, etc.)
+- `/api/*` - Proxy requests to backend services
+
+### 2. User Management Service (Port 8002)
+
+**Purpose**: User CRUD operations and role management
+
+**Technology**: Flask + SQLite/PostgreSQL  
+**Database**: `user-management/users.db` or PostgreSQL `users` table  
+**Entry Point**: `user-management/app.py`
+
+**Responsibilities**:
+- Complete user lifecycle management (Create, Read, Update, Delete)
+- Role assignment (Admin/Faculty/Student)
+- Password hashing (Werkzeug security)
+- Notification triggers on user changes
+- Sync with gateway for authentication consistency
+
+**Key Endpoints**:
+- `GET /users` - List all users (paginated)
+- `POST /users` - Create new user
+- `GET /users/{id}` - Get user details
+- `PUT /users/{id}` - Update user information
 - `DELETE /users/{id}` - Delete user
+- `GET /users/by-role/{role}` - Filter users by role
 
 ### 3. Booking Service (Port 8001)
-**Room reservation and scheduling**
 
+**Purpose**: Room reservation and scheduling system
+
+**Technology**: FastAPI (async) + SQLite/PostgreSQL  
+**Database**: `booking/bookings.db` or PostgreSQL `bookings` table  
+**Entry Point**: `booking/main.py`
+
+**Responsibilities**:
 - Room availability management
-- Time slot booking (8 AM - 6 PM)
-- Conflict prevention
-- Auto-generated API docs
-
-**Tech**: FastAPI + SQLite (`bookings.db`)
+- Time slot booking (8 AM - 6 PM, hourly slots)
+- Double-booking prevention (unique constraints)
+- Student-only cancellation enforcement
+- Notification integration on booking events
+- Auto-generated API documentation (FastAPI Swagger)
 
 **Key Endpoints**:
-- `POST /bookings` - Create booking
-- `GET /bookings` - List bookings
-- `GET /bookings/available` - Available slots
+- `GET /rooms` - List available rooms
+- `POST /bookings` - Create new booking
+- `GET /bookings` - List all bookings
+- `GET /bookings/user/{user_id}` - Get user's bookings
+- `DELETE /bookings/{id}` - Cancel booking (students only can cancel own)
+- `GET /bookings/available` - Get available time slots
+- `GET /docs` - Interactive API documentation (Swagger UI)
 
-### 4. GPA Calculator (Port 8003)
-**Academic performance calculator**
+### 4. GPA Calculator Service (Port 8003)
 
-- Grade calculation (A=4.0, F=0.0)
+**Purpose**: Academic grade point average calculator
+
+**Technology**: Flask (stateless, no database)  
+**Entry Point**: `gpa-calculator/main.py`
+
+**Responsibilities**:
+- Weighted GPA calculation (A=4.0, B=3.0, C=2.0, D=1.0, F=0.0)
 - Credit hour weighting
-- Stateless computation
-
-**Tech**: Flask (no database)
+- JSON input/output
+- Stateless computation (no data persistence)
 
 **Key Endpoints**:
-- `POST /calculate` - Calculate GPA
+- `POST /calculate` - Calculate GPA from grades
+  - Input: `{"courses": [{"grade": "A", "credits": 3}, ...]}`
+  - Output: `{"gpa": 3.67, "total_credits": 12}`
 
 ### 5. Notification Service (Port 8004)
-**System-wide notification management**
 
-- User and admin notifications
+**Purpose**: System-wide notification and event management
+
+**Technology**: Flask + SQLite/PostgreSQL  
+**Database**: `notification/notifications.db` or PostgreSQL `notifications` table  
+**Entry Point**: `notification/app.py`
+
+**Responsibilities**:
+- User-specific notifications
+- Admin/system-wide notifications
 - Role-based filtering
-- Notification history
-
-**Tech**: Flask + SQLite (`notifications.db`)
+- Read/unread status tracking
+- Notification history and persistence
 
 **Key Endpoints**:
 - `POST /notifications` - Create notification
 - `GET /notifications` - List notifications
-- `PUT /notifications/{id}` - Mark as read
+- `GET /notifications/user/{user_id}` - User's notifications
+- `PUT /notifications/{id}` - Mark notification as read
+- `DELETE /notifications/{id}` - Delete notification
 
 ### 6. Maintenance Service (Port 8080)
-**AI-powered maintenance ticketing**
 
-- Real-time WebSocket updates
-- AI priority classification (P0-P4)
+**Purpose**: AI-powered maintenance ticketing with real-time updates
+
+**Technology**: Flask-SocketIO + WebSocket + DistilBERT NLP  
+**Database**: In-memory (could be persisted to PostgreSQL)  
+**Entry Point**: `maintenance/websocket_api.py`  
+**AI Model**: `maintenance/enhanced_model.py`
+
+**Responsibilities**:
+- Maintenance ticket creation and management
+- **AI Classification**: NLP-based ticket categorization (Plumbing, Electrical, HVAC, IT, etc.)
+- **Priority Detection**: Identifies urgent keywords (flood, fire, emergency)
+- Real-time WebSocket updates (Socket.IO)
+- Batch ticket processing
 - Pattern-based SLA assignment
 - System impact analysis
 
-**Tech**: Flask-SocketIO + SQLite (`maintenance.db`)
-
 **Key Endpoints**:
-- `POST /tickets` - Create ticket
-- `GET /tickets` - List tickets
-- `WS /socket.io` - WebSocket connection
+- `POST /tickets` - Create maintenance ticket (AI auto-categorizes)
+- `GET /tickets` - List all tickets
+- `GET /tickets/{id}` - Get ticket details
+- `PUT /tickets/{id}` - Update ticket status
+- `WS /socket.io` - WebSocket connection for real-time updates
+- `GET /` - Serve WebSocket frontend (`websocket_frontend.html`)
+
+**AI Model Details**:
+- **Model**: DistilBERT (distilled BERT, 40% smaller, 60% faster)
+- **Categories**: Plumbing, Electrical, HVAC, Carpentry, Cleaning, IT, Security, Other
+- **Priority**: Urgent/Standard based on keyword detection
+- **Inference Time**: ~200ms per ticket
 
 ---
 
@@ -367,240 +342,209 @@ cd notification && python3 app.py      # Port 8004
 
 ### Environment Variables
 
-The system supports environment-based configuration for different deployment scenarios:
+The system supports environment-based configuration via `.env` file:
 
-**Core Configuration** (`.env`):
 ```bash
-# Application
+# Application Environment
 FLASK_ENV=development        # development | production
-FLASK_DEBUG=1                # 0 | 1
-JWT_SECRET_KEY=your-secret   # Change in production!
+FLASK_DEBUG=1                # 0 (off) | 1 (on)
 
-# Database
+# Security
+JWT_SECRET_KEY=your-secret-key-change-in-production  # CRITICAL: Change in production!
+
+# Database Configuration
 DATABASE_TYPE=sqlite         # sqlite | postgresql
-DB_HOST=localhost            # PostgreSQL host
+DB_HOST=localhost            # PostgreSQL host (or 'postgres' in Docker)
 DB_PORT=5432                 # PostgreSQL port
 DB_NAME=campus_services      # Database name
-DB_USER=postgres             # Database user
-DB_PASSWORD=password         # Database password
+DB_USER=postgres             # Database username
+DB_PASSWORD=postgres         # Database password
 
-# Service Discovery (Docker/AWS)
-GATEWAY_HOST=localhost       # Or: gateway, <ALB-DNS>
-USER_MGMT_HOST=localhost     # Or: user-management
-BOOKING_HOST=localhost       # Or: booking
-NOTIFICATION_HOST=localhost  # Or: notification
-GPA_HOST=localhost           # Or: gpa-calculator
-MAINTENANCE_HOST=localhost   # Or: maintenance
+# Service Discovery (for Docker/AWS deployment)
+DOCKER_CONTAINER=false       # true if running in Docker
+GATEWAY_HOST=localhost       # Or: gateway (Docker), <ALB-DNS> (AWS)
+USER_MGMT_HOST=localhost     # Or: user-management (Docker)
+BOOKING_HOST=localhost       # Or: booking (Docker)
+NOTIFICATION_HOST=localhost  # Or: notification (Docker)
+GPA_HOST=localhost           # Or: gpa-calculator (Docker)
+MAINTENANCE_HOST=localhost   # Or: maintenance (Docker)
 
-# HTTP Client
-REQUEST_TIMEOUT=10           # Request timeout (seconds)
-REQUEST_RETRY_ATTEMPTS=3     # Number of retries
-REQUEST_RETRY_BACKOFF=1.0    # Backoff factor
+# HTTP Client Configuration
+REQUEST_TIMEOUT=10           # Request timeout in seconds
+REQUEST_RETRY_ATTEMPTS=3     # Number of retry attempts
+REQUEST_RETRY_BACKOFF=1.0    # Backoff factor for exponential backoff
 ```
 
-**Setup**:
-1. Copy template: `cp .env.example .env`
-2. Update values for your environment
-3. Never commit `.env` to git
+**Setup Instructions**:
+```bash
+# 1. Copy example configuration
+cp .env.example .env
 
-### Shared Infrastructure (New)
+# 2. Edit .env with your values
+nano .env  # or vim, code, etc.
 
-The project includes shared modules for production deployments:
+# 3. IMPORTANT: Change JWT_SECRET_KEY to a secure random string
+# Generate secure key: python -c "import secrets; print(secrets.token_hex(32))"
 
-- **`shared/config.py`**: Environment-based configuration, service URL discovery
-- **`shared/database.py`**: Connection pooling for PostgreSQL/SQLite
-- **`shared/http_client.py`**: Retry logic + circuit breaker pattern
+# 4. Never commit .env to git (already in .gitignore)
+```
+
+### Shared Infrastructure
+
+The `shared/` directory contains reusable modules for production deployments:
+
+**`shared/config.py`**:
+- Environment variable loading
+- Service URL discovery (local/Docker/AWS)
+- Configuration validation
+
+**`shared/database.py`**:
+- Database abstraction layer
+- Connection pooling for PostgreSQL (ThreadedConnectionPool, 2-20 connections)
+- Thread-local SQLite connections
+- Automatic fallback to SQLite if PostgreSQL unavailable
+
+**`shared/http_client.py`**:
+- HTTP client with retry logic (3 attempts, exponential backoff)
+- Circuit breaker pattern (opens after 5 failures for 60 seconds)
+- Timeout handling
+- Request correlation ID propagation
 
 **Installation**:
 ```bash
 pip install -r shared/requirements.txt
 ```
 
-**Usage** (services will be updated):
+**Usage Example**:
 ```python
 from shared import config, db_pool, http_client
 
-# Get service URL (auto-detects local/Docker/AWS)
-url = config.get_service_url('users')
+# Get service URL (auto-detects environment)
+user_service_url = config.get_service_url('users')
 
 # Use connection pool
 with db_pool.get_connection() as conn:
-    result = conn.execute(sql, params)
+    cursor = conn.execute("SELECT * FROM users WHERE role = ?", ("student",))
+    results = cursor.fetchall()
 
-# HTTP with retry logic
-response = http_client.post(url, json=data)
+# HTTP with retry logic and circuit breaker
+response = http_client.post(
+    f"{user_service_url}/users",
+    json={"name": "John Doe", "email": "john@example.com"}
+)
 ```
 
 ---
 
 ## Docker Deployment
 
-### Local Docker with PostgreSQL
+### Docker Compose Architecture
 
-1. **Start services with Docker Compose:**
-   ```bash
-   docker-compose up --build
-   ```
+The `docker-compose.yml` orchestrates all 6 microservices + PostgreSQL database:
 
-2. **Access**:
-   - Gateway: http://localhost:5001
-   - All services automatically connected to PostgreSQL
+**Services Included**:
+- `gateway` - Port 5001
+- `user-management` - Port 8002
+- `booking` - Port 8001
+- `gpa-calculator` - Port 8003
+- `notification` - Port 8004
+- `maintenance` - Port 8080
+- `postgres` - Port 5432 (PostgreSQL 15-alpine)
 
-3. **View logs**:
-   ```bash
-   docker-compose logs -f gateway
-   docker-compose logs -f postgres
-   ```
+### Quick Start
 
-4. **Stop services**:
-   ```bash
-   docker-compose down
-   docker-compose down -v  # Remove volumes
-   ```
+```bash
+# Start all services (builds images if needed)
+docker-compose up --build
 
-### PostgreSQL Migration
+# Run in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f gateway
+docker-compose logs -f postgres
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (deletes database data)
+docker-compose down -v
+```
+
+### PostgreSQL Initialization
+
+On first run, PostgreSQL automatically:
+1. Creates `campus_services` database
+2. Runs `init-db-postgres.sql` (creates all tables, indexes, constraints)
+3. Sets up health checks (`pg_isready`)
+
+**Database Schema** (`init-db-postgres.sql`):
+- `users` table (UUID primary key, email index, role check constraint)
+- `rooms` table (serial ID, name, capacity)
+- `bookings` table (foreign key to rooms, unique constraint on room/date/time)
+- `notifications` table (UUID primary key, user_id index)
+- Indexes on frequently queried columns (email, date, user_id)
+
+### Access Services
+
+```bash
+# Frontend
+http://localhost:5001
+
+# API Endpoints
+http://localhost:5001/health  # Gateway
+http://localhost:8001/docs     # Booking API docs (Swagger)
+http://localhost:8001/health   # Booking health
+# ... (all services have /health)
+
+# PostgreSQL
+psql -h localhost -U postgres -d campus_services
+# Password: postgres (default, change in .env)
+```
+
+### Useful Docker Commands
+
+```bash
+# View running containers
+docker ps
+
+# Exec into container
+docker-compose exec gateway bash
+docker-compose exec postgres psql -U postgres -d campus_services
+
+# View database connections
+docker-compose exec postgres psql -U postgres -d campus_services \
+  -c "SELECT count(*) FROM pg_stat_activity WHERE datname='campus_services';"
+
+# Rebuild specific service
+docker-compose up --build gateway
+
+# View resource usage
+docker stats
+
+# Clean up everything
+docker-compose down -v --remove-orphans
+docker system prune -a  # CAUTION: Removes all unused Docker data
+```
+
+### Migrating SQLite to PostgreSQL
 
 If you have existing SQLite data:
 
 ```bash
+# 1. Ensure PostgreSQL is running
+docker-compose up -d postgres
+
+# 2. Run migration script
 cd scripts
 python migrate_to_postgresql.py
+
+# 3. Follow prompts (provide DB host, port, credentials)
+
+# 4. Update .env to use PostgreSQL
+DATABASE_TYPE=postgresql
+DB_HOST=localhost  # or 'postgres' if in Docker
 ```
-
-Follow the prompts to migrate `users.db`, `bookings.db`, `notifications.db` to PostgreSQL.
-
----
-
-## AWS Deployment
-
-### Architecture (Production)
-
-```
-┌────────────────────────────────────────────────────┐
-│                     Internet                       │
-└────────────────┬───────────────────────────────────┘
-                 │
-┌────────────────▼───────────────────────────────────┐
-│        Application Load Balancer (ALB)             │
-│         Port 80/443 (HTTPS with ACM)               │
-└────┬──────────┬──────────┬──────────┬──────────────┘
-     │          │          │          │
-┌────▼────┐ ┌──▼──────┐ ┌─▼─────┐ ┌──▼───────┐
-│Gateway  │ │Booking  │ │User   │ │Notif     │
-│ECS Task │ │ECS Task │ │Mgmt   │ │ECS Task  │
-│         │ │         │ │ECS    │ │          │
-└────┬────┘ └────┬────┘ └───┬───┘ └─────┬────┘
-     │           │          │           │
-     └───────────┴──────────┴───────────┘
-                 │
-         ┌───────▼────────┐
-         │  RDS PostgreSQL│
-         │  Multi-AZ      │
-         │  Private Subnet│
-         └────────────────┘
-```
-
-### Deployment Steps
-
-**Prerequisites**:
-- AWS CLI configured
-- Docker installed
-- AWS account with appropriate permissions
-
-**1. Create RDS PostgreSQL Database**:
-```bash
-aws rds create-db-instance \
-  --db-instance-identifier campus-services-db \
-  --db-instance-class db.t3.micro \
-  --engine postgres \
-  --engine-version 15.4 \
-  --master-username postgres \
-  --master-user-password YOUR_SECURE_PASSWORD \
-  --allocated-storage 20 \
-  --vpc-security-group-ids sg-xxxxx \
-  --db-subnet-group-name your-subnet-group \
-  --backup-retention-period 7 \
-  --multi-az
-```
-
-**2. Initialize Database**:
-```bash
-psql -h <RDS-ENDPOINT> -U postgres -d postgres -f init-db-postgres.sql
-```
-
-**3. Store Secrets in AWS Secrets Manager**:
-```bash
-aws secretsmanager create-secret \
-  --name campus-services/db-password \
-  --secret-string '{"password":"YOUR_SECURE_PASSWORD"}'
-
-aws secretsmanager create-secret \
-  --name campus-services/jwt-secret \
-  --secret-string '{"key":"YOUR_JWT_SECRET"}'
-```
-
-**4. Build and Push Docker Images to ECR**:
-```bash
-# Create ECR repositories
-aws ecr create-repository --repository-name campus-services/gateway
-aws ecr create-repository --repository-name campus-services/booking
-# ... repeat for all services
-
-# Login to ECR
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
-
-# Build and push
-docker build -t campus-services/gateway ./gateway
-docker tag campus-services/gateway:latest <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/campus-services/gateway:latest
-docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/campus-services/gateway:latest
-```
-
-**5. Create ECS Cluster**:
-```bash
-aws ecs create-cluster --cluster-name campus-services-cluster
-```
-
-**6. Deploy Services to ECS Fargate**:
-- Create task definitions for each service
-- Configure environment variables (DB_HOST, JWT_SECRET_KEY, etc.)
-- Create ECS services
-- Configure ALB target groups
-- Set up Cloud Map for service discovery
-
-**7. Configure ALB**:
-- Create target groups for each service
-- Set up path-based routing
-- Configure health checks
-- Enable HTTPS with ACM certificate
-
-### Cost Estimate
-
-**Development/Testing**:
-- RDS db.t3.micro: ~$15/month
-- ECS Fargate (6 tasks, 0.25 vCPU, 0.5 GB): ~$25/month
-- ALB: ~$20/month
-- Data transfer: ~$5/month
-- **Total**: ~$65-70/month
-
-**Production (HA)**:
-- RDS db.t3.small Multi-AZ: ~$70/month
-- ECS Fargate (6 tasks, 0.5 vCPU, 1 GB, 2 AZs): ~$100/month
-- ALB with HA: ~$25/month
-- NAT Gateway: ~$35/month
-- Data transfer: ~$20/month
-- **Total**: ~$250-300/month
-
-### Security Best Practices
-
-- ✅ Use Secrets Manager for credentials
-- ✅ Enable RDS encryption at rest
-- ✅ Use private subnets for services
-- ✅ Configure security groups (least privilege)
-- ✅ Enable CloudWatch logging
-- ✅ Use IAM roles for task execution
-- ✅ Enable AWS WAF on ALB
-- ✅ Regular security patching
 
 ---
 
@@ -610,150 +554,646 @@ aws ecs create-cluster --cluster-name campus-services-cluster
 
 ```
 cloudMLOPS/
-├── gateway/              # Port 5001 - Auth + Frontend
-│   ├── main.py
-│   ├── static/          # HTML/CSS/JS files
-│   └── gateway.db
-├── user-management/      # Port 8002 - User CRUD
-│   ├── app.py
-│   └── users.db
-├── booking/              # Port 8001 - Room Bookings
-│   ├── main.py
-│   └── bookings.db
-├── gpa-calculator/       # Port 8003 - GPA Calculation
-│   └── main.py
-├── notification/         # Port 8004 - Notifications
-│   ├── app.py
-│   └── notifications.db
-├── maintenance/          # Port 8080 - Maintenance Tickets
-│   ├── websocket_api.py
-│   ├── enhanced_model.py
-│   └── maintenance.db
-├── shared/               # Shared infrastructure (new)
-│   ├── config.py        # Environment config
-│   ├── database.py      # Connection pooling
-│   ├── http_client.py   # Retry logic
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml           # GitHub Actions CI/CD pipeline
+├── gateway/
+│   ├── Dockerfile
+│   ├── main.py                 # Gateway service entry point
+│   ├── gateway.db              # SQLite database (local dev)
+│   └── static/                 # Frontend files
+│       ├── login.html          # Login page
+│       ├── dashboard.html      # Main dashboard
+│       ├── booking.html        # Room booking UI
+│       ├── gpa.html            # GPA calculator UI
+│       ├── maintenance.html    # Maintenance tickets UI
+│       ├── notifications.html  # Notifications UI
+│       └── users.html          # User management UI (Admin)
+├── user-management/
+│   ├── Dockerfile
+│   ├── main.py                 # Original user service
+│   ├── app.py                  # Active user service (with logging)
+│   ├── requirements.txt
+│   └── users.db                # SQLite database (local dev)
+├── booking/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── main.py                 # FastAPI booking service
+│   ├── requirements.txt
+│   └── bookings.db             # SQLite database (local dev)
+├── gpa-calculator/
+│   ├── Dockerfile
+│   └── main.py                 # Stateless GPA calculator
+├── notification/
+│   ├── Dockerfile
+│   ├── main.py                 # Original notification service
+│   ├── app.py                  # Active notification service (with logging)
+│   └── notifications.db        # SQLite database (local dev)
+├── maintenance/
+│   ├── Dockerfile
+│   ├── websocket_api.py        # WebSocket-enabled maintenance API
+│   ├── enhanced_model.py       # AI model for ticket classification
+│   ├── websocket_frontend.html # Real-time WebSocket UI
+│   └── requirements_websocket.txt
+├── shared/                     # Shared infrastructure (new)
+│   ├── __init__.py
+│   ├── config.py               # Environment configuration
+│   ├── database.py             # Connection pooling
+│   ├── http_client.py          # Retry logic & circuit breaker
 │   └── requirements.txt
 ├── scripts/
-│   └── migrate_to_postgresql.py
-├── docker-compose.yml    # Docker orchestration
-├── init-db-postgres.sql  # PostgreSQL schema
-├── .env.example          # Environment template
-├── start_all.sh          # Local startup script
-└── README.md             # This file
+│   └── migrate_to_postgresql.py  # SQLite → PostgreSQL migration
+├── .env.example                # Environment variable template
+├── .gitignore
+├── docker-compose.yml          # Docker orchestration
+├── init-db-postgres.sql        # PostgreSQL schema initialization
+├── start_all.sh                # Local startup script (SQLite mode)
+└── README.md                   # This file
+```
+
+### Local Development Workflow
+
+```bash
+# 1. Activate virtual environment
+source venv/bin/activate
+
+# 2. Start services manually (each in separate terminal)
+cd gateway && python main.py          # Port 5001
+cd user-management && python app.py   # Port 8002
+cd booking && python main.py          # Port 8001
+cd gpa-calculator && python main.py   # Port 8003
+cd notification && python app.py      # Port 8004
+cd maintenance && python websocket_api.py  # Port 8080
+
+# OR use start_all.sh (starts all in background)
+bash start_all.sh
+
+# 3. View logs
+tail -f /tmp/gateway.log
+tail -f /tmp/booking.log
+tail -f /tmp/usermgmt.log
+tail -f /tmp/gpa.log
+tail -f /tmp/notification.log
+tail -f /tmp/maintenance.log
+
+# 4. Stop services
+pkill -f "gateway/main.py"
+pkill -f "booking/main.py"
+pkill -f "user-management/app.py"
+pkill -f "gpa-calculator/main.py"
+pkill -f "notification/app.py"
+pkill -f "maintenance/websocket_api.py"
 ```
 
 ### Adding a New Service
 
-1. Create service directory with main file
-2. Add JWT validation
-3. Update `docker-compose.yml`
-4. Add service discovery env vars
-5. Update gateway routing (if needed)
-6. Create service endpoints
-7. Update this README
+1. **Create service directory**: `mkdir new-service`
+2. **Create main file**: `new-service/main.py`
+3. **Add JWT validation**:
+   ```python
+   import jwt
+   SECRET_KEY = 'your-secret-key-change-in-production'
+   
+   def verify_jwt(token):
+       try:
+           return jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+       except:
+           return None
+   ```
+4. **Add health endpoint**:
+   ```python
+   @app.route('/health')
+   def health():
+       return jsonify({"status": "healthy"})
+   ```
+5. **Create Dockerfile**: See existing services for template
+6. **Update `docker-compose.yml`**: Add new service definition
+7. **Update gateway routing** (if needed): Add proxy routes in `gateway/main.py`
+8. **Add to `start_all.sh`**: Include startup command
+9. **Update this README**: Document new service
 
-### Testing
+### Code Quality Tools
 
-**Manual Testing**:
 ```bash
-# Health checks
-curl http://localhost:5001/health
-curl http://localhost:8001/health
-curl http://localhost:8002/health
-curl http://localhost:8003/health
-curl http://localhost:8004/health
-curl http://localhost:8080/health
+# Install dev dependencies
+pip install flake8 black isort pytest
 
-# Login
+# Format code
+black . --exclude venv
+isort . --skip venv
+
+# Lint code
+flake8 . --exclude=venv --max-line-length=100
+
+# Run tests (if tests exist)
+pytest tests/
+```
+
+---
+
+## API Documentation
+
+### Authentication Flow
+
+1. **Login**: POST `/auth/login` with email/password
+2. **Receive JWT**: Response includes token with 24-hour expiry
+3. **Store Token**: Frontend stores in localStorage
+4. **Authorize Requests**: Include in header: `Authorization: Bearer <token>`
+5. **JWT Validation**: Each service validates token independently
+6. **Token Expiry**: After 24 hours, user must login again
+
+### Example API Calls
+
+**Login**:
+```bash
 curl -X POST http://localhost:5001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin123"}'
+  -d '{"email":"student@example.com","password":"student123"}'
 
-# Use JWT token
-curl http://localhost:8002/users \
+# Response:
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "3",
+    "email": "student@example.com",
+    "name": "Student User",
+    "role": "student"
+  }
+}
+```
+
+**Get Current User**:
+```bash
+curl http://localhost:5001/auth/me \
   -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
-**Connection Pool Testing**:
+**List Rooms**:
 ```bash
-# Monitor PostgreSQL connections
-docker-compose exec postgres psql -U postgres -d campus_services \
-  -c "SELECT count(*) FROM pg_stat_activity WHERE datname='campus_services';"
+curl http://localhost:5001/api/booking/rooms \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
-### Troubleshooting
+**Create Booking**:
+```bash
+curl -X POST http://localhost:5001/api/booking/bookings \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "room_id": 1,
+    "date": "2025-12-20",
+    "time_slot": "10:00 AM - 11:00 AM"
+  }'
+```
 
-**Services won't start**:
-- Check if ports are already in use: `lsof -i :5001`
-- Kill existing processes: `pkill -f "gateway/main.py"`
-- Check logs: `tail -f /tmp/gateway.log`
+**Calculate GPA**:
+```bash
+curl -X POST http://localhost:5001/api/gpa/calculate \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "courses": [
+      {"grade": "A", "credits": 3},
+      {"grade": "B", "credits": 4},
+      {"grade": "A", "credits": 3}
+    ]
+  }'
 
-**Database errors**:
-- Verify database files exist
-- Check file permissions
-- Re-initialize if needed: `python -c "import sqlite3; sqlite3.connect('gateway.db')"`
+# Response: {"gpa": 3.7, "total_credits": 10}
+```
 
-**Docker issues**:
-- Check Docker is running: `docker ps`
-- View logs: `docker-compose logs -f`
-- Rebuild: `docker-compose up --build --force-recreate`
+**Create Maintenance Ticket**:
+```bash
+curl -X POST http://localhost:5001/api/maintenance/tickets \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Broken projector in Lecture Hall B",
+    "description": "The projector is not turning on"
+  }'
 
-**JWT errors**:
-- Verify JWT_SECRET_KEY matches across services
-- Check token expiry (24 hours)
-- Ensure Authorization header format: `Bearer <token>`
+# Response includes AI-generated category and priority
+```
 
-### Performance Considerations
+### Interactive API Docs
 
-**Connection Pooling** (PostgreSQL):
-- Min connections: 2
-- Max connections: 20
-- Reuse connections across requests
-- 10-50x performance improvement
+FastAPI provides auto-generated interactive documentation:
 
-**HTTP Retry Logic**:
-- 3 retry attempts
-- Exponential backoff (1s, 2s, 4s)
-- Circuit breaker (opens after 5 failures for 60s)
+**Booking Service Swagger UI**: http://localhost:8001/docs
 
-**Database Optimization**:
-- Indexes on frequently queried columns
-- Auto-vacuum enabled (PostgreSQL)
-- Connection timeout: 10 seconds
+Features:
+- Try out API endpoints directly in browser
+- See request/response schemas
+- Authentication support
+- No additional configuration needed
+
+---
+
+## CI/CD Pipeline
+
+### GitHub Actions Workflow
+
+Location: `.github/workflows/ci-cd.yml`
+
+**Triggers**:
+- Push to `main` or `develop` branches
+- Pull requests to `main` or `develop`
+
+**Jobs**:
+
+1. **Lint & Code Quality**
+   - Black formatter check
+   - isort import sorting check
+   - Flake8 linting (critical errors only)
+
+2. **Test Services**
+   - Python 3.11 environment
+   - Install all dependencies
+   - Run pytest (unit + integration tests)
+   - Generate coverage report
+
+3. **Build Docker Images**
+   - Build all 6 service images
+   - Tag with commit SHA
+   - Push to Docker Hub (on main branch only)
+   - Images: `<username>/campus-gateway`, `<username>/campus-booking`, etc.
+
+4. **Security Scan**
+   - Scan Docker images for vulnerabilities
+   - Check dependencies for known CVEs
+
+**View Pipeline**: https://github.com/reivfts/end-to-end-MLOPs/actions
+
+---
+
+## Testing
+
+### Manual Testing
+
+**Health Checks**:
+```bash
+# Test all service health endpoints
+for port in 5001 8001 8002 8003 8004 8080; do
+  echo "Testing port $port..."
+  curl http://localhost:$port/health
+done
+```
+
+**Authentication Test**:
+```bash
+# 1. Login and capture token
+TOKEN=$(curl -s -X POST http://localhost:5001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student@example.com","password":"student123"}' \
+  | jq -r '.token')
+
+echo "Token: $TOKEN"
+
+# 2. Test authenticated endpoint
+curl http://localhost:5001/api/booking/rooms \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Database Connection Test**:
+```bash
+# PostgreSQL
+docker-compose exec postgres psql -U postgres -d campus_services \
+  -c "SELECT count(*) FROM users;"
+
+# SQLite (local)
+sqlite3 gateway/gateway.db "SELECT count(*) FROM users;"
+```
+
+### Automated Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_gateway.py
+
+# Run tests matching pattern
+pytest -k "test_auth"
+```
+
+### Load Testing
+
+```bash
+# Install Apache Bench
+# macOS: brew install httpd
+# Ubuntu: sudo apt-get install apache2-utils
+
+# Test login endpoint (100 requests, 10 concurrent)
+ab -n 100 -c 10 -p login.json -T application/json \
+  http://localhost:5001/auth/login
+
+# Where login.json contains:
+# {"email":"student@example.com","password":"student123"}
+```
+
+### Correlation ID Testing
+
+```bash
+# Make a request and check logs
+curl http://localhost:5001/api/booking/rooms \
+  -H "Authorization: Bearer <TOKEN>"
+
+# View correlation ID in logs
+tail -f /tmp/gateway.log | grep "correlation_id"
+tail -f /tmp/booking.log | grep "correlation_id"
+
+# Should see same correlation ID across both services for one request
+```
+
+---
+
+## Troubleshooting
+
+### Services Won't Start
+
+**Problem**: Port already in use
+```bash
+# Find process using port
+lsof -i :5001
+
+# Kill process
+kill -9 <PID>
+
+# Or kill all Python services
+pkill -f "main.py"
+pkill -f "app.py"
+pkill -f "websocket_api.py"
+```
+
+**Problem**: Module not found
+```bash
+# Ensure virtual environment is activated
+source venv/bin/activate
+
+# Reinstall dependencies
+pip install -r shared/requirements.txt
+pip install -r booking/requirements.txt
+pip install -r user-management/requirements.txt
+pip install -r maintenance/requirements_websocket.txt
+```
+
+### Database Errors
+
+**Problem**: SQLite database locked
+```bash
+# Database might be in use by another process
+# Solution: Close other connections or restart service
+pkill -f "gateway/main.py"
+python gateway/main.py
+```
+
+**Problem**: PostgreSQL connection refused
+```bash
+# Check PostgreSQL is running
+docker-compose ps postgres
+
+# View PostgreSQL logs
+docker-compose logs postgres
+
+# Restart PostgreSQL
+docker-compose restart postgres
+
+# Verify connection
+psql -h localhost -U postgres -d campus_services
+```
+
+**Problem**: Tables don't exist
+```bash
+# Reinitialize PostgreSQL
+docker-compose down -v  # CAUTION: Deletes all data
+docker-compose up -d postgres
+
+# Or manually run init script
+psql -h localhost -U postgres -d campus_services -f init-db-postgres.sql
+```
+
+### JWT Authentication Errors
+
+**Problem**: "Invalid token" or "Token expired"
+```bash
+# Check JWT_SECRET_KEY matches across services
+grep JWT_SECRET_KEY .env
+
+# Verify token is valid (decode without verification)
+python -c "import jwt, sys; print(jwt.decode(sys.argv[1], options={'verify_signature': False}))" <TOKEN>
+
+# Token expires after 24 hours - login again
+```
+
+**Problem**: 403 Forbidden (wrong role)
+```bash
+# Check user role
+curl http://localhost:5001/auth/me \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Admin endpoints require admin role
+# Student endpoints require student/faculty role
+```
+
+### Docker Issues
+
+**Problem**: Container keeps restarting
+```bash
+# View container logs
+docker-compose logs -f gateway
+
+# Check for port conflicts
+docker-compose ps
+lsof -i :5001
+
+# Rebuild and restart
+docker-compose up --build --force-recreate gateway
+```
+
+**Problem**: PostgreSQL data persists when it shouldn't
+```bash
+# Remove volumes and restart
+docker-compose down -v
+docker-compose up -d
+```
+
+**Problem**: Out of disk space
+```bash
+# Clean up Docker
+docker system df  # View disk usage
+docker system prune -a  # Remove unused data
+docker volume prune  # Remove unused volumes
+```
+
+### Logging Issues
+
+**Problem**: No logs appearing
+```bash
+# Check log files exist
+ls -la /tmp/*.log
+
+# Verify logging is configured
+grep "logging.basicConfig" gateway/main.py
+
+# Check file permissions
+chmod 666 /tmp/*.log
+
+# View logs in real-time
+tail -f /tmp/gateway.log
+```
+
+**Problem**: Correlation IDs not working
+```bash
+# Verify correlation_id in logs
+grep correlation_id /tmp/gateway.log
+
+# Check before_request middleware is running
+curl http://localhost:5001/health
+tail -1 /tmp/gateway.log  # Should show correlation_id
+```
+
+### Performance Issues
+
+**Problem**: Slow API responses
+```bash
+# Check connection pool status (PostgreSQL)
+docker-compose exec postgres psql -U postgres -d campus_services \
+  -c "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
+
+# Monitor database queries
+docker-compose exec postgres psql -U postgres -d campus_services \
+  -c "SELECT query, query_start FROM pg_stat_activity WHERE state = 'active';"
+
+# Check for long-running transactions
+docker-compose exec postgres psql -U postgres -d campus_services \
+  -c "SELECT * FROM pg_stat_activity WHERE state != 'idle' AND query_start < now() - interval '1 minute';"
+```
+
+**Problem**: High memory usage
+```bash
+# Check Docker resource usage
+docker stats
+
+# Restart services
+docker-compose restart
+
+# Check for connection leaks
+grep "connection" /tmp/*.log | grep -i "error"
+```
+
+### AI Model Issues (Maintenance Service)
+
+**Problem**: Model fails to load
+```bash
+# Check transformers library installed
+pip show transformers
+
+# Download model manually
+python -c "from transformers import AutoModel; AutoModel.from_pretrained('distilbert-base-uncased')"
+
+# Check disk space (model is ~250MB)
+df -h
+```
+
+**Problem**: Slow ticket classification
+```bash
+# Normal inference time: ~200ms
+# If slower, check CPU usage
+top -p $(pgrep -f websocket_api)
+
+# Consider using GPU if available (requires PyTorch GPU support)
+```
+
+### Getting Help
+
+**Check logs first**:
+```bash
+tail -100 /tmp/gateway.log
+tail -100 /tmp/booking.log
+# ... check all service logs
+```
+
+**Enable debug mode**:
+```bash
+# In .env
+FLASK_DEBUG=1
+FLASK_ENV=development
+
+# Restart services
+bash start_all.sh
+```
+
+**Report issues**:
+- GitHub Issues: https://github.com/reivfts/end-to-end-MLOPs/issues
+- Include: Error message, logs, steps to reproduce
 
 ---
 
 ## System Status
 
-| Service | Port | Status | JWT | Database | Framework |
-|---------|------|--------|-----|----------|-----------|
-| Gateway | 5001 | ✅ | ✅ | gateway.db | Flask |
-| User-Mgmt | 8002 | ✅ | ✅ | users.db | Flask |
-| Booking | 8001 | ✅ | ✅ | bookings.db | FastAPI |
-| GPA | 8003 | ✅ | ✅ | None | Flask |
-| Notification | 8004 | ✅ | ✅ | notifications.db | Flask |
-| Maintenance | 8080 | ✅ | ✅ | maintenance.db | Flask-SocketIO |
+| Service | Port | Status | Auth | Database | Framework | Features |
+|---------|------|--------|------|----------|-----------|----------|
+| Gateway | 5001 | ✅ Ready | JWT | SQLite/PostgreSQL | Flask | Auth, Routing, Static Files, Logging |
+| User Mgmt | 8002 | ✅ Ready | JWT | SQLite/PostgreSQL | Flask | CRUD, RBAC, Notifications, Logging |
+| Booking | 8001 | ✅ Ready | JWT | SQLite/PostgreSQL | FastAPI | Async, Swagger Docs, Logging |
+| GPA Calc | 8003 | ✅ Ready | JWT | None | Flask | Stateless, Logging |
+| Notification | 8004 | ✅ Ready | JWT | SQLite/PostgreSQL | Flask | Events, History, Logging |
+| Maintenance | 8080 | ✅ Ready | JWT+WS | In-Memory | Flask-SocketIO | AI, WebSocket, Real-time, Logging |
 
-**All services are production-ready with JWT authentication and RBAC!** 🚀
+**Shared Infrastructure**: ✅ Connection pooling, retry logic, circuit breaker, correlation IDs
+
+**CI/CD**: ✅ GitHub Actions (lint, test, build, security scan)
+
+**Deployment**: ✅ Docker Compose, PostgreSQL 15, health checks
 
 ---
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make changes and test thoroughly
-4. Submit pull request with clear description
+4. Commit with clear messages: `git commit -m "Add amazing feature"`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Open Pull Request with detailed description
+
+**Code Standards**:
+- Follow PEP 8 style guide
+- Add docstrings to functions
+- Include type hints where applicable
+- Write unit tests for new features
+- Update README for new functionality
 
 ---
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - See LICENSE file for details.
 
 ---
 
-**Last Updated**: December 13, 2025  
-**Version**: 2.0 (Infrastructure Modernization)  
-**Status**: Production Ready
+## Acknowledgments
+
+- **FastAPI** - Modern async web framework
+- **Flask** - Lightweight WSGI framework
+- **PostgreSQL** - Robust relational database
+- **HuggingFace Transformers** - Pre-trained NLP models
+- **Docker** - Containerization platform
+- **GitHub Actions** - CI/CD automation
+
+---
+
+## Contact
+
+**Repository**: https://github.com/reivfts/end-to-end-MLOPs  
+**Author**: reivfts  
+**Last Updated**: December 15, 2025  
+**Version**: 3.0 - Production Ready with Database Abstraction & Comprehensive Logging
+
+---
+
+**🚀 Campus Services Hub is production-ready with full microservices architecture, PostgreSQL support, correlation IDs, and CI/CD pipeline!**
