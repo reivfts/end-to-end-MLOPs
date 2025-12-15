@@ -99,7 +99,7 @@ Student: student@example.com  / student123
             │   config.py | database.py         │
             │   http_client.py (retry logic)    │
             └───────────────────────────────────┘
-                      │               │
+                      │              │
          ┌────────────▼─────┐   ┌────▼───────────────────┐
          │ SQLite(Local Dev)│   │PostgreSQL (Docker/Prod)│
          │ - gateway.db     │   │ - campus_services DB   │
