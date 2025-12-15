@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "maintenance",
-      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:maintenance-latest",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:maintenance-cleaned-architecture",
       "essential": true,
       "portMappings": [
         {

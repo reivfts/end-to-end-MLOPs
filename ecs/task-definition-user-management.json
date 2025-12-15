@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "user-management",
-      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:user-management-latest",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:user-management-cleaned-architecture",
       "essential": true,
       "portMappings": [
         {

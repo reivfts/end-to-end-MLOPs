@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "gpa-calculator",
-      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:gpa-calculator-latest",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:gpa-calculator-cleaned-architecture",
       "essential": true,
       "portMappings": [
         {

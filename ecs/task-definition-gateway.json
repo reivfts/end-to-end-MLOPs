@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "gateway",
-      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:gateway-latest",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:gateway-cleaned-architecture",
       "essential": true,
       "portMappings": [
         {

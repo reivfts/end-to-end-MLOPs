@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "booking",
-      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:booking-latest",
+      "image": "643771447281.dkr.ecr.us-east-2.amazonaws.com/campus-services-hubs:booking-cleaned-architecture",
       "essential": true,
       "portMappings": [
         {
