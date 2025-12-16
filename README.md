@@ -41,7 +41,7 @@ Campus Services Hub modernizes university operations through a microservices arc
 **Comprehensive Logging** - Python logging with structured format, dual output (file + stdout)  
 **Docker Support** - Full containerization with docker-compose orchestration  
 **CI/CD Pipeline** - GitHub Actions for automated testing and Docker builds  
-**Keyword Search System** - Tokenization of maintenance tickets and scored them to assess a priority score
+**Keyword Search System** - Tokenization of maintenance tickets and scored them to assess a priority score  
 **WebSocket Support** - Real-time updates for maintenance ticket status
 
 ### User Roles & Access
